@@ -1,6 +1,7 @@
 #!/bin/bash
 
-##MASTER liWGS-SV PIPELINE SCRIPT
+#liWGS-SV Pipeline: MASTER PIPELINE SCRIPT
+#August 2015
 #Contact: rcollins@chgr.mgh.harvard.edu
 
 #Submit this script to long queue on ERISOne to run entire pipeline
@@ -10,21 +11,25 @@ samples_list=$1
 params=$2
 
 #Source params file
+echo -e "STATUS [$(date)]: Loading parameters..."
 . ${params}
 
 #Set up output directory tree
+echo -e "STATUS [$(date)]: Creating directory trees..."
 if ! [ -e ${OUTDIR} ]; then
   mkdir ${OUTDIR}
 fi
 mkdir ${OUTDIR}/QC
-mkdir ${OUTDIR}/cohort
+mkdir ${OUTDIR}/QC/cohort
+mkdir ${OUTDIR}/QC/sample
 while read ID bam sex; do
-  mkdir ${OUTDIR}/QC/${ID}
+  mkdir ${OUTDIR}/QC/sample/${ID}
 done < ${samples_list}
 mkdir ${OUTDIR}/data
 mkdir ${OUTDIR}/data/seqDepth
 mkdir ${OUTDIR}/data/clusters
 mkdir ${OUTDIR}/SV_calls
+mkdir ${OUTDIR}/logs
 
 #Set up working directory tree
 if ! [ -e ${WRKDIR} ]; then
@@ -33,3 +38,16 @@ fi
 while read ID bam sex; do
   mkdir ${WRKDIR}/${ID}
 done < ${samples_list}
+
+#Link & index all bams
+echo -e "STATUS [$(date)]: Indexing BAMs..."
+while read ID bam sex; do
+  ln -s ${bam} ${WRKDIR}/${ID}/${ID}.bam
+  bsub -q short -e ${OUTDIR}/logs/bam_index.log -o ${OUTDIR}/logs/bam_index.log -u nobody -sla miket_sc -J ${ID}_index "sambamba index ${WRKDIR}/${ID}/${ID}.bam"
+done < ${samples_list}
+
+##STAGE 1: modules 1, 2, and 3
+echo -e "STATUS [$(date)]: Beginning PHASE 1..."
+#Submit module 1 (QC)
+
+

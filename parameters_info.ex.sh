@@ -1,7 +1,8 @@
 #!/bin/bash
 
-#liWGS-SV parameters file
-#Talkowski lab default (example)
+#liWGS-SV Pipeline: Example parameters file
+#August 2015
+#Contact: rcollins@chgr.mgh.harvard.edu
 
 #Copy this format exactly to create your own parameters file
 
