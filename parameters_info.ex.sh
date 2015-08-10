@@ -17,7 +17,7 @@ if ! [ -e ${WRKDIR} ]; then
 fi
 
 #Full paths for reference files & executables 
-export liWGS-SV=/data/talkowski/rlc47/code/liWGS-SV #path to liWGS-SV git repo
+export liWGS_SV=/data/talkowski/rlc47/code/liWGS-SV #path to liWGS-SV git repo
 export REF=/data/talkowski/tools/ref/Ensembl_hgGRCh37_71_reord_bwa07/Ensembl_hgGRCh37_71_ERCC_reord.fa #reference fasta
 export DICT=/data/talkowski/tools/ref/Ensembl_hgGRCh37_71_reord_bwa07/Ensembl_hgGRCh37_71_ERCC_reord.mainContigs.dict #reference dictionary, restricted to chromosomes where calls should be made
 export CLASSIFIER_DIR=/data/talkowski/rlc47/code/classifier #classifier git repo
@@ -27,4 +27,4 @@ export sambamba=/data/talkowski/tools/bin/sambamba_v0.4.6 #sambamba executable
 
 #Update user paths
 export PATH=${PATH}:${CLASSIFIER_DIR}:${PYCLUSTER_DIR}
-export PYTHONPATH:${CLASSIFIER_DIR}:${PYCLUSTER_DIR}
+export PYTHOPATH=${PYTHONPATH}:${CLASSIFIER_DIR}:${PYCLUSTER_DIR}
