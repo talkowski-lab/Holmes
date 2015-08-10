@@ -11,6 +11,9 @@ params=$2
 #Source params file
 . ${params}
 
+#Set additional params
+genome_size=2897310462 #n-masked length of grch37
+
 #Submit library metrics QC jobs
 while read ID bam sex; do
   bsub -u nobody -o ${OUTDIR}/logs/input_QC.log -e ${OUTDIR}/logs/input_QC.log -sla miket_sc -q normal -J ${COHORT_ID}_QC "sambamba view -h -f bam -F 'not secondary_alignment' ${WRKDIR}/${ID}/${ID}.bam | java -Xmx3g -jar ${PICARD} CollectMultipleMetrics I=/dev/stdin O=${OUTDIR}/QC/sample/${ID}/${ID} AS=true R=${REF} VALIDATION_STRINGENCY=SILENT PROGRAM=null PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics"
@@ -29,3 +32,52 @@ done < ${samples_list}
 while read ID bam sex; do
   bsub -u nobody -o ${OUTDIR}/logs/dosageCheck.log -e ${OUTDIR}/logs/dosageCheck.log -sla miket_sc -q short -J ${COHORT_ID}_QC "${liWGS_SV}/scripts/sexCheck.sh ${ID} ${WRKDIR}/${ID}/${ID}.bam ${params}"
 done < ${samples_list}
+
+#Gate until complete; 20 sec check; 5 min report
+GATEcount=$( bjobs -w | awk '{ print $7 }' | grep "${COHORT_ID}_QC" | wc -l )
+GATEwait=0
+until [[ $GATEcount == 0 ]]; do
+  sleep 20s
+  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep "${COHORT_ID}_QC" | wc -l )
+  GATEwait=$[${GATEwait} +1]
+  if [[ $GATEwait == 15 ]]; then
+    echo "$(date): INCOMPLETE"
+    echo "$(date): Waiting on ${GATEcount} jobs to complete"
+    GATEwait=0
+  fi
+done
+
+#Run dosage Z-score
+ID=$( head -n1 ${samples_list} | cut -f1 )
+cat ${OUTDIR}/QC/sample/${ID}/${ID}_WGSdosageCheck/${ID}.genome.ObsVsExp.bed > ${WRKDIR}/${COHORT_ID}.WGSdosage_ObsVsExp.bed
+while read ID bam sex; do
+  paste ${WRKDIR}/${COHORT_ID}.WGSdosage_ObsVsExp.bed <( cut -f4 ${OUTDIR}/QC/sample/${ID}/${ID}_WGSdosageCheck/${ID}.genome.ObsVsExp.bed ) > ${WRKDIR}/${COHORT_ID}.WGSdosage_ObsVsExp.bed2
+  mv ${WRKDIR}/${COHORT_ID}.WGSdosage_ObsVsExp.bed2 ${WRKDIR}/${COHORT_ID}.WGSdosage_ObsVsExp.bed
+done < <( sed '1d' ${samples_list} )
+cat <( echo -e "chr\tstart\tend\t$( cut -f1 ${samples_list} | paste -s )" ) ${WRKDIR}/${COHORT_ID}.WGSdosage_ObsVsExp.bed > ${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsExp.bed
+Rscript -e "x <- read.table(\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsExp.bed\",header=T); x[,4:ncol(x)] <- apply(x[,4:ncol(x)],"
+Rscript -e "x <- read.table(\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsExp.bed\",header=T); x[,4:ncol(x)] <- t(abs(apply(x[,4:ncol(x)],1,scale))); write.table(x,\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_absoluteZscores.bed\",row.names=F,col.names=T,sep=\"\\t\",quote=F)"
+
+#Collect summary for each sample
+while read ID bam sex; do
+  total=$( grep '^PAIR' ${OUTDIR}/QC/sample/${ID}/${ID}.alignment_summary_metrics | awk '{ print $2 }' ) #total reads in BAM
+  rd_aln=$( grep '^PAIR' ${OUTDIR}/QC/sample/${ID}/${ID}.alignment_summary_metrics | awk '{ print $6 }' ) #reads aligned
+  rd_aln_rt=$( echo "scale=4;(( ${rd_aln}/${total} ))" | bc ) #read aln rate
+  pr_aln=$( grep '^PAIR' ${OUTDIR}/QC/sample/${ID}/${ID}.alignment_summary_metrics | awk '{ print $17 }' ) #reads aligned in pairs
+  pr_aln_rt=$( echo "scale=4;(( ${pr_aln}/${total} ))" | bc ) #pairwise aln rate
+  prop=$( echo "scale=4;(( $( fgrep Proper ${OUTDIR}/QC/sample/${ID}/${ID}.stats | awk '{ print $3 }' | tr -d "()%" )/100 ))" | bc )
+  rd_dup=$( echo "scale=4;(( $( grep '^Duplicates' ${OUTDIR}/QC/sample/${ID}/${ID}.stats | awk '{ print $3 }' | tr -d "()%")/100 ))" | bc ) #read dup rate
+  pr_dup=$( grep -A1 '^LIBRARY' ${OUTDIR}/QC/sample/${ID}/${ID}.complexity | tail -n1 | awk '{ print $(NF-1) }' ) #pair dup rate
+  chim=$( grep '^PAIR' ${OUTDIR}/QC/sample/${ID}/${ID}.alignment_summary_metrics | awk '{ print $21 }' ) #chimera pct
+  mis=$( awk '{ if ($8=="FR") print $1 }' ${OUTDIR}/QC/sample/${ID}/${ID}.insert_size_metrics ) #MIS
+  ismad=$( awk '{ if ($8=="RF") print $2 }' ${OUTDIR}/QC/sample/${ID}/${ID}.insert_size_metrics ) #ISMAD
+  icov=$( echo "scale=2;(( ( ( ${pr_aln}/2 )*${prop}*( 1-${pr_dup} )*${mis} )/${genome_size} ))" | bc ) #calculate insert coverage, uses n-masked size of grch37 defined above
+  ncov=$( grep -A1 '^GENOME_TERRITORY' ${OUTDIR}/QC/sample/${ID}/${ID}.wgs | tail -n1 | awk '{ print $2 }' ) #nucleotide cov
+  osex=$( fgrep  )
+  echo -e "${ID}\t${total}\t${rd_aln_rt}\t${pr_aln_rt}\t${prop}\t${chim}\t${rd_dup}\t${pr_dup}\t${mis}\t${ismad}\t${icov}\t${ncov}\t${sex}\t${osex}" #print metrics
+
+
+
+
+
+
