@@ -24,3 +24,8 @@ done < ${samples_list}
 while read ID bam sex; do
   bsub -u nobody -o ${OUTDIR}/logs/dosageCheck.log -e ${OUTDIR}/logs/dosageCheck.log -sla miket_sc -q normal -J ${COHORT_ID}_QC "${liWGS_SV}/scripts/WGScheckDosage.sh ${WRKDIR}/${ID}/${ID}.bam ${ID} h37 both ${OUTDIR}/QC/sample/${ID}/"
 done < ${samples_list}
+
+#Submit sex check
+while read ID bam sex; do
+  bsub -u nobody -o ${OUTDIR}/logs/dosageCheck.log -e ${OUTDIR}/logs/dosageCheck.log -sla miket_sc -q short -J ${COHORT_ID}_QC "${liWGS_SV}/scripts/sexCheck.sh ${ID} ${WRKDIR}/${ID}/${ID}.bam ${params}"
+done < ${samples_list}
