@@ -8,13 +8,7 @@
 #Run preferences
 export COHORT_ID=test #cohort ID (string)
 export OUTDIR=/scratch/miket/rlc47temp/liWGS-SV_${COHORT_ID} #output directory - only final outputs will be written here
-if ! [ -e ${OUTDIR} ]; then
-  mkdir ${OUTDIR}
-fi
 export WRKDIR=/scratch/miket/rlc47temp/tmp.files/${COHORT_ID}_liWGS-SV #working directory - all temp files will be written here. May temporarily need lots of storage, so best to avoid writing to /tmp
-if ! [ -e ${WRKDIR} ]; then
-  mkdir ${WRKDIR}
-fi
 
 #Full paths for reference files & executables 
 export liWGS_SV=/data/talkowski/rlc47/code/liWGS-SV #path to liWGS-SV git repo
