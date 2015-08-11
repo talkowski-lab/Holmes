@@ -24,3 +24,4 @@ while read ID bam sex; do
   echo -e "${ID}_classifier\t${WRKDIR}/${ID}/classifier.dels.bed\n${ID}_cnMOPS\t${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed" >> ${WRKDIR}/consensusCNV/dels_to_merge.list
   echo -e "${ID}_classifier\t${WRKDIR}/${ID}/classifier.dups.bed\n${ID}_cnMOPS\t${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed" >> ${WRKDIR}/consensusCNV/dups_to_merge.list
 done < ${samples_list}
+${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensusCNV/dels_to_merge.list 10000 ${COHORT_ID} ${WRKDIR}/consensusCNV/
