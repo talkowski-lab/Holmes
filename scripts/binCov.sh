@@ -87,13 +87,13 @@ if [ $# -eq 6 ]; then
     if [ $num_contigs -gt 1 ]; then 
      echo -e "\nMERGING & SORTING FILTERED ALIGNMENTS...\n"
      while read bam sample; do
-      bsub -sla miket_sc -q big -R 'rusage[mem=16000]' -M 16000 -v 24000 -J ${ID}_mergefiltered "/data/talkowski/tools/bin//data/talkowski/tools/bin/sambamba_v0.4.6 merge -l 6 ${TMPDIR}/${sample}/${sample}.merged.bam ${TMPDIR}/${sample}/${sample}.*.screened.bam; /data/talkowski/tools/bin//data/talkowski/tools/bin/sambamba_v0.4.6 sort -n --tmpdir=${TMPDIR} -m 12GB -l 6 -o ${TMPDIR}/${sample}.screened.nsort.bam ${TMPDIR}/${sample}/${sample}.merged.bam"
+      bsub -sla miket_sc -q big -R 'rusage[mem=16000]' -M 16000 -v 24000 -J ${ID}_mergefiltered "/data/talkowski/tools/bin/sambamba_v0.4.6 merge -l 6 ${TMPDIR}/${sample}/${sample}.merged.bam ${TMPDIR}/${sample}/${sample}.*.screened.bam; /data/talkowski/tools/bin/sambamba_v0.4.6 sort -n --tmpdir=${TMPDIR} -m 12GB -l 6 -o ${TMPDIR}/${sample}.screened.nsort.bam ${TMPDIR}/${sample}/${sample}.merged.bam"
      done < ${list}
     elif [ $num_contigs -eq 1 ]; then
      echo -e "\nSORTING FILTERED ALIGNMENTS...\n"
      contig=$( awk '{ print $1 }' ${TMPDIR}/contig.list )
      while read bam sample; do
-      bsub -sla miket_sc -q big -R 'rusage[mem=16000]' -M 16000 -v 24000 -J ${ID}_mergefiltered "/data/talkowski/tools/bin//data/talkowski/tools/bin/sambamba_v0.4.6 sort -m 4GB -n -l 6 -o ${TMPDIR}/${sample}.screened.nsort.bam ${TMPDIR}/${sample}/${sample}.${contig}.screened.bam"
+      bsub -sla miket_sc -q big -R 'rusage[mem=16000]' -M 16000 -v 24000 -J ${ID}_mergefiltered "/data/talkowski/tools/bin/sambamba_v0.4.6 sort -m 4GB -n -l 6 -o ${TMPDIR}/${sample}.screened.nsort.bam ${TMPDIR}/${sample}/${sample}.${contig}.screened.bam"
      done < ${list}
     fi
     ##Gate (20 second check; 5 minute report)

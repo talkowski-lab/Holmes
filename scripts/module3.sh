@@ -33,15 +33,27 @@ done
 
 #Submit cnMOPS - autosomes
 mkdir ${WRKDIR}/cnMOPS
+cov=${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed
 for contig in $( seq 1 22 ); do
   mkdir ${WRKDIR}/cnMOPS/${contig}
-  cov=${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed
   cat <( head -n1 ${cov} ) <( awk -v chr=${contig} '{ if ($1==chr) print }' ${cov} ) > ${WRKDIR}/cnMOPS/${contig}/${COHORT_ID}.rawCov.chr${contig}.bed
   for binsize in 1 3 10 30; do
     bsub -q big -M 30000 -sla miket_sc -u rlc47 -R 'rusage[mem=30000]' -v 40000 -J ${COHORT_ID}_cnMOPS "Rscript ${liWGS_SV}/scripts/cnMOPS_postcoverage.R -m insert -r ${binsize} -b ${binsize}000 -I ${COHORT_ID} ${WRKDIR}/cnMOPS/${contig}/${COHORT_ID}.rawCov.chr${contig}.bed ${WRKDIR}/cnMOPS/${contig}/"
   done
 done
-for contig in $( seq 1 22 ) X Y; do
+#Submit cnMOPS - allosomes
+if [ ${other_assign} == "MALE" ]; then
+  fgrep -v "#" ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics | awk '{ if ($14=="M" || $14=="O") print $1 }' > ${WRKDIR}/males.list
+  fgrep -v "#" ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics | awk '{ if ($14=="F") print $1 }' > ${WRKDIR}/females.list
+else
+  fgrep -v "#" ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics | awk '{ if ($14=="M") print $1 }' > ${WRKDIR}/males.list
+  fgrep -v "#" ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics | awk '{ if ($14=="F" || $14=="O") print $1 }' > ${WRKDIR}/females.list
+fi
+for contig in X Y; do
+  
+done
+
+for contig in $( seq 1 22 ); do
   echo ${contig}
   for binsize in 1 3 10 30; do
     fgrep -v "#" /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/${contig}/PE250.${binsize}00kbBins.cnMOPS.gff | awk -v OFS="\t" '{ print $1, $4, $5, $9, $10, $11, $12 }' | sed 's/^chr//g' >> /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/PE250.cnMOPS_master.cnMOPS.gff
