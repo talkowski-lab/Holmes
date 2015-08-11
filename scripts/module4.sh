@@ -48,9 +48,11 @@ for contig in X Y; do
   done
 done  
 
-#Prep for SE large CNV caller
+#Submit SE large CNV caller
 Rscript ${liWGS_SV}/scripts/SE_largeCNV/getwithinlibrarynorm_query.R ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${COHORT_ID} ${WRKDIR}
-
+while read ID bam sex; do
+  bsub -q normal -M 6000 -R 'rusage[mem=6000]' -v 10000 -sla miket_sc -u nobody -o ${OUTDIR}/logs/DNAcopy.log -e ${OUTDIR}/logs/DNAcopy.log -J ${COHORT_ID}_DNAcopy "${liWGS_SV}/scripts/SE_largeCNV/largescaleCNVpipeline.sh ${samples_list} ${params} ${ID}"
+done < ${samples_list}
 
 #Gate until complete; 20 sec check; 5 min report
 GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_cnMOPS" | wc -l )
@@ -91,3 +93,18 @@ while read bam ID; do
   bedtools merge -d 1 -c 4,5,6,7 -o distinct,mean,mean,distinct -i <( sed -e 's/^X/23/g' -e 's/^Y/24/g' ${WRKDIR}/cnMOPS/cnMOPS_calls/${ID}/${ID}.cnMOPS.preMerge.dels.bed | sort -nk1,1 -k2,2 | sed -e 's/^23/X/g' -e 's/^24/Y/g' ) >  ${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed
   bedtools merge -d 1 -c 4,5,6,7 -o distinct,mean,mean,distinct -i <( sed -e 's/^X/23/g' -e 's/^Y/24/g' ${WRKDIR}/cnMOPS/cnMOPS_calls/${ID}/${ID}.cnMOPS.preMerge.dups.bed | sort -nk1,1 -k2,2 | sed -e 's/^23/X/g' -e 's/^24/Y/g' ) >  ${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed
 done < ${WRKDIR}/cnMOPS.input
+
+#Gate until complete; 20 sec check; 5 min report
+GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_DNAcopy" | wc -l )
+GATEwait=0
+until [[ $GATEcount == 0 ]]; do
+  sleep 20s
+  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_DNAcopy" | wc -l )
+  GATEwait=$[${GATEwait} +1]
+  if [[ $GATEwait == 15 ]]; then
+    echo "$(date): INCOMPLETE"
+    echo "$(date): Waiting on ${GATEcount} jobs to complete"
+    GATEwait=0
+  fi
+done
+
