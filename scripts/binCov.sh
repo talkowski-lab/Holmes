@@ -43,7 +43,7 @@ if [ $# -eq 6 ]; then
       echo "...submitting ${sample} in parallel..."
       while read contig_line; do
         contig=$( echo ${contig_line} | awk '{ print $1}' )
-        bsub -sla miket_sc -u nobody -R 'rusage[mem=4000]' -M 4000 -v 6000 -q short -e ${OUTDIR}/logfiles/error.txt -o ${OUTDIR}/logfiles/splitPropPairs.out -J ${ID}_step1 "/data/talkowski/tools/bin/sambamba_v0.4.6 view -f bam -F 'paired and proper_pair and not (unmapped or mate_is_unmapped or duplicate or secondary_alignment)' ${bam} ${contig} | /apps/lab/miket/samtools/1.0/bin/samtools sort -T ${TMPDIR}/${sample}.${contig}.screened -O bam -m 3200M /dev/stdin > ${TMPDIR}/${sample}/${sample}.${contig}.screened.bam"
+        bsub -sla miket_sc -u nobody -R 'rusage[mem=6000]' -M 6000 -v 10000 -q normal -e ${OUTDIR}/logfiles/error.txt -o ${OUTDIR}/logfiles/splitPropPairs.out -J ${ID}_step1 "/data/talkowski/tools/bin/sambamba_v0.4.6 view -f bam -F 'paired and proper_pair and not (unmapped or mate_is_unmapped or duplicate or secondary_alignment)' ${bam} ${contig} | /apps/lab/miket/samtools/1.0/bin/samtools sort -T ${TMPDIR}/${sample}.${contig}.screened -O bam -m 3200M /dev/stdin > ${TMPDIR}/${sample}/${sample}.${contig}.screened.bam"
       done < ${TMPDIR}/contig.list
     done < ${list}
   fi
