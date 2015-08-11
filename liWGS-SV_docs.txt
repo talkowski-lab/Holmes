@@ -6,6 +6,20 @@ Execution command:
 liWGS_SV.sh samples.list parameters_info.sh
 
 ##INPUT##
-samples.list: three columns, tab delimited, col 1) sample ID, col 2) full path to sample bam, col 3) expected sex (M=XY, F=XX, O=other)
+samples.list: three columns, tab delimited, col 1) sample ID, col 2) full path to sample bam, col 3) expected sex (M=XY, F=XX, O=other, U=unknown (will defer to predicted sex by sexcheck))
 parameters_info.sh: shell script to export all parameters for pipeline run
 
+##MODULE 1: QC##
+Runs the following:
+	Picard EstimateLibraryComplexity
+	Picard CollectAlignmentSummaryMetrics
+	Picard CollectInsertSizeMetrics
+	Picard CollectWgsMetrics
+	Samtools flagstat
+	Bamtools stats
+	Sex Check
+	WGS Dosage Bias Check
+Checks for nominal QC values, reports errors to ${OUTDIR}/${COHORT_ID}_WARNINGS.txt
+Writes master QC table to ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics
+
+ 

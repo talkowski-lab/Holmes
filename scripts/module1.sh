@@ -98,7 +98,7 @@ while read ID total rd_aln_rt pr_aln_rt prop chim rd_dup pr_dup mis ismad icov n
   if [ $( echo "${dosage} > 1" | bc) -eq 1 ]; then
     echo "WARNING [MODULE 1]: ${ID} WGS dosage absolute Z-score > 1"
   fi
-  if [ ${sex} != ${osex} ]; then
+  if [ ${sex} != ${osex} ] && [ ${sex} != "U" ]; then
     echo "WARNING [MODULE 1]: ${ID} predicted sex does not match reported sex"
   fi
 done < <( fgrep -v "#" ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics ) > ${OUTDIR}/${COHORT_ID}_WARNINGS.txt
