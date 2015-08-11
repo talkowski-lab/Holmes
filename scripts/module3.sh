@@ -32,38 +32,30 @@ until [[ $GATEcount == 0 ]]; do
 done
 
 #Submit cnMOPS - autosomes
-# mkdir ${WRKDIR}/cnMOPS
-# for contig in $( seq 1 22 ); do
-#  mkdir ${WRKDIR}/cnMOPS/${contig}
-#  cov=${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed
-#  cat <( head -n1 ${cov} ) <( awk -v chr=${contig} '{ if ($1==chr) print }' ${cov} ) > ${WRKDIR}/cnMOPS/${contig}/PE250.rawCov.chr${contig}.bed
-#  # for binsize in 1 3 10 30; do
-#  #    bsub -q big -M 30000 -sla miket_sc -u rlc47 -R 'rusage[mem=30000]' -v 40000 -J PE250_cnMOPS_${binsize}_chr${contig} "Rscript /data/talkowski/rlc47/code/SV/cnMOPS_postcoverage.R -m pysical -r ${binsize} -b ${binsize}00 -I PE250 /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/${contig}/PE250.rawCov.chr${contig}.bed /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/${contig}/"
-#  # done
-#  for binsize in 1 3 10 30; do
-#     if ! [ -e /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/${contig}/PE250.${binsize}00kbBins.cnMOPS.gff ]; then
-#       echo -e "MISSING ${binsize}00bp GFF on chr${contig}"
-#       bsub -q big -M 50000 -sla miket_sc -u rlc47 -R 'rusage[mem=50000]' -v 70000 -J PE250_cnMOPS_${binsize}_chr${contig} "Rscript /data/talkowski/rlc47/code/SV/cnMOPS_postcoverage.R -m pysical -r ${binsize} -b ${binsize}00 -I PE250 /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/${contig}/PE250.rawCov.chr${contig}.bed /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/${contig}/"
-#     else
-#       echo "PE250 chr${contig} ${binsize}00bp bin GFF OK..."
-#     fi
-#   done
-# done
-# for contig in $( seq 1 22 ) X Y; do
-#   echo ${contig}
-#   for binsize in 1 3 10 30; do
-#     fgrep -v "#" /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/${contig}/PE250.${binsize}00kbBins.cnMOPS.gff | awk -v OFS="\t" '{ print $1, $4, $5, $9, $10, $11, $12 }' | sed 's/^chr//g' >> /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/PE250.cnMOPS_master.cnMOPS.gff
-#   done
-# done
-# mkdir /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/cnMOPS_calls
-# while read bam ID; do
-#   echo ${ID}
-#   mkdir /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/cnMOPS_calls/${ID}
-#   fgrep -w "${ID}" /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/PE250.cnMOPS_master.cnMOPS.gff | grep 'CN[0-1]' | sed 's/median\=//g' | sed 's/mean\=//g' | sed 's/CN\=//g' | sed 's/\;//g' > /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/cnMOPS_calls/${ID}/${ID}.cnMOPS.preMerge.dels.bed
-#   fgrep -w "${ID}" /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/PE250.cnMOPS_master.cnMOPS.gff | grep 'CN[3-9]' | sed 's/median\=//g' | sed 's/mean\=//g' | sed 's/CN\=//g' | sed 's/\;//g' > /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/cnMOPS_calls/${ID}/${ID}.cnMOPS.preMerge.dups.bed
-#   bedtools merge -d 1 -c 4,5,6,7 -o distinct,mean,mean,distinct -i <( sed -e 's/^X/23/g' -e 's/^Y/24/g' /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/cnMOPS_calls/${ID}/${ID}.cnMOPS.preMerge.dels.bed | sort -nk1,1 -k2,2 | sed -e 's/^23/X/g' -e 's/^24/Y/g' ) >  /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/cnMOPS_calls/${ID}/${ID}.cnMOPS.dels.bed
-#   bedtools merge -d 1 -c 4,5,6,7 -o distinct,mean,mean,distinct -i <( sed -e 's/^X/23/g' -e 's/^Y/24/g' /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/cnMOPS_calls/${ID}/${ID}.cnMOPS.preMerge.dups.bed | sort -nk1,1 -k2,2 | sed -e 's/^23/X/g' -e 's/^24/Y/g' ) >  /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/cnMOPS_calls/${ID}/${ID}.cnMOPS.dups.bed
-# done < /data/talkowski/Collaboration/JaffeAssembly/bams.list2
+mkdir ${WRKDIR}/cnMOPS
+for contig in $( seq 1 22 ); do
+  mkdir ${WRKDIR}/cnMOPS/${contig}
+  cov=${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed
+  cat <( head -n1 ${cov} ) <( awk -v chr=${contig} '{ if ($1==chr) print }' ${cov} ) > ${WRKDIR}/cnMOPS/${contig}/${COHORT_ID}.rawCov.chr${contig}.bed
+  for binsize in 1 3 10 30; do
+    bsub -q big -M 30000 -sla miket_sc -u rlc47 -R 'rusage[mem=30000]' -v 40000 -J ${COHORT_ID}_cnMOPS "Rscript /data/talkowski/rlc47/code/SV/cnMOPS_postcoverage.R -m pysical -r ${binsize} -b ${binsize}00 -I PE250 /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/${contig}/PE250.rawCov.chr${contig}.bed /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/${contig}/"
+  done
+done
+for contig in $( seq 1 22 ) X Y; do
+  echo ${contig}
+  for binsize in 1 3 10 30; do
+    fgrep -v "#" /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/${contig}/PE250.${binsize}00kbBins.cnMOPS.gff | awk -v OFS="\t" '{ print $1, $4, $5, $9, $10, $11, $12 }' | sed 's/^chr//g' >> /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/PE250.cnMOPS_master.cnMOPS.gff
+  done
+done
+mkdir /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/cnMOPS_calls
+while read bam ID; do
+  echo ${ID}
+  mkdir /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/cnMOPS_calls/${ID}
+  fgrep -w "${ID}" /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/PE250.cnMOPS_master.cnMOPS.gff | grep 'CN[0-1]' | sed 's/median\=//g' | sed 's/mean\=//g' | sed 's/CN\=//g' | sed 's/\;//g' > /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/cnMOPS_calls/${ID}/${ID}.cnMOPS.preMerge.dels.bed
+  fgrep -w "${ID}" /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/PE250.cnMOPS_master.cnMOPS.gff | grep 'CN[3-9]' | sed 's/median\=//g' | sed 's/mean\=//g' | sed 's/CN\=//g' | sed 's/\;//g' > /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/cnMOPS_calls/${ID}/${ID}.cnMOPS.preMerge.dups.bed
+  bedtools merge -d 1 -c 4,5,6,7 -o distinct,mean,mean,distinct -i <( sed -e 's/^X/23/g' -e 's/^Y/24/g' /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/cnMOPS_calls/${ID}/${ID}.cnMOPS.preMerge.dels.bed | sort -nk1,1 -k2,2 | sed -e 's/^23/X/g' -e 's/^24/Y/g' ) >  /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/cnMOPS_calls/${ID}/${ID}.cnMOPS.dels.bed
+  bedtools merge -d 1 -c 4,5,6,7 -o distinct,mean,mean,distinct -i <( sed -e 's/^X/23/g' -e 's/^Y/24/g' /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/cnMOPS_calls/${ID}/${ID}.cnMOPS.preMerge.dups.bed | sort -nk1,1 -k2,2 | sed -e 's/^23/X/g' -e 's/^24/Y/g' ) >  /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/cnMOPS_calls/${ID}/${ID}.cnMOPS.dups.bed
+done < /data/talkowski/Collaboration/JaffeAssembly/bams.list2
 
 #Move, bgzip, and tabix individual coverage
 while read ID bam sex; do
