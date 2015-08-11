@@ -17,6 +17,12 @@ module load intel_parallel_xe/xe
 module load R/3.1.0
 Rscript -e "if(\"DNAcopy\" %in% rownames(installed.packages()) == FALSE){source(\"http://bioconductor.org/biocLite.R\"); biocLite(\"DNAcopy\")}; suppressPackageStartupMessages(library(DNAcopy))"
 
+#Submit SE large CNV caller
+Rscript ${liWGS_SV}/scripts/SE_largeCNV/getwithinlibrarynorm_query.R ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${COHORT_ID} ${WRKDIR}
+while read ID bam sex; do
+  bsub -q normal -M 6000 -R 'rusage[mem=6000]' -v 10000 -sla miket_sc -u nobody -o ${OUTDIR}/logs/DNAcopy.log -e ${OUTDIR}/logs/DNAcopy.log -J ${COHORT_ID}_DNAcopy "${liWGS_SV}/scripts/SE_largeCNV/largescaleCNVpipeline.sh ${samples_list} ${params} ${ID}"
+done < ${samples_list}
+
 #Submit cnMOPS - autosomes
 mkdir ${WRKDIR}/cnMOPS
 cov=${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed
@@ -46,13 +52,7 @@ for contig in X Y; do
     bsub -u nobody -q big -M 30000 -o ${OUTDIR}/logs/cnMOPS.log -e ${OUTDIR}/logs/cnMOPS.log -sla miket_sc -u rlc47 -R 'rusage[mem=30000]' -v 40000 -J ${COHORT_ID}_cnMOPS "Rscript ${liWGS_SV}/scripts/cnMOPS_postcoverage.R -m insert -r ${binsize} -b ${binsize}000 -I ${COHORT_ID}_M ${WRKDIR}/cnMOPS/${contig}/${COHORT_ID}.rawCov.chr${contig}.M.bed ${WRKDIR}/cnMOPS/${contig}/"
     bsub -u nobody q big -M 30000 -o ${OUTDIR}/logs/cnMOPS.log -e ${OUTDIR}/logs/cnMOPS.log -sla miket_sc -u rlc47 -R 'rusage[mem=30000]' -v 40000 -J ${COHORT_ID}_cnMOPS "Rscript ${liWGS_SV}/scripts/cnMOPS_postcoverage.R -m insert -r ${binsize} -b ${binsize}000 -I ${COHORT_ID}_F ${WRKDIR}/cnMOPS/${contig}/${COHORT_ID}.rawCov.chr${contig}.F.bed ${WRKDIR}/cnMOPS/${contig}/"
   done
-done  
-
-#Submit SE large CNV caller
-Rscript ${liWGS_SV}/scripts/SE_largeCNV/getwithinlibrarynorm_query.R ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${COHORT_ID} ${WRKDIR}
-while read ID bam sex; do
-  bsub -q normal -M 6000 -R 'rusage[mem=6000]' -v 10000 -sla miket_sc -u nobody -o ${OUTDIR}/logs/DNAcopy.log -e ${OUTDIR}/logs/DNAcopy.log -J ${COHORT_ID}_DNAcopy "${liWGS_SV}/scripts/SE_largeCNV/largescaleCNVpipeline.sh ${samples_list} ${params} ${ID}"
-done < ${samples_list}
+done
 
 #Gate until complete; 20 sec check; 5 min report
 GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_cnMOPS" | wc -l )
@@ -108,10 +108,13 @@ until [[ $GATEcount == 0 ]]; do
   fi
 done
 
-#Move remaining DNAcopy samples to sample dirs
+#Write error report for large CNVs
 while read ID bam sex; do
-  mv ${WRKDIR}/${ID}.SD.profile ${WRKDIR}/${ID}/DNAcopy/
+  if [ $( fgrep large ${WRKDIR}/${ID}/DNAcopy/${ID}.events.tsv | grep -ve "Xp\|Xq\|Yp\|Yq" | fgrep del | wc -l ) -gt 0 ]; then
+    echo "WARNING [MODULE 4]: Sample ${ID} has predicted large deletion of $( fgrep large ${WRKDIR}/${ID}/DNAcopy/${ID}.events.tsv | grep -ve "Xp\|Xq\|Yp\|Yq" | fgrep del | awk '{ print $(NF-2) }' | paste -s -d, ); inspect DNAcopy coverage plot to confirm" >> ${OUTDIR}/${COHORT_ID}_WARNINGS.txt
+  fi
+  if [ $( fgrep large ${WRKDIR}/${ID}/DNAcopy/${ID}.events.tsv | grep -ve "Xp\|Xq\|Yp\|Yq" | fgrep dup | wc -l ) -gt 0 ]; then
+    echo "WARNING [MODULE 4]: Sample ${ID} has predicted large duplication of $( fgrep large ${WRKDIR}/${ID}/DNAcopy/${ID}.events.tsv | grep -ve "Xp\|Xq\|Yp\|Yq" | fgrep dup | awk '{ print $(NF-2) }' | paste -s -d, ); inspect DNAcopy coverage plot to confirm" >> ${OUTDIR}/${COHORT_ID}_WARNINGS.txt
+  fi
 done < ${samples_list}
-
-
 
