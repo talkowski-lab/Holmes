@@ -30,6 +30,7 @@ mkdir ${OUTDIR}/data/seqDepth
 mkdir ${OUTDIR}/data/clusters
 mkdir ${OUTDIR}/SV_calls
 mkdir ${OUTDIR}/logs
+cp ${params} ${OUTDIR}/${COHORT_ID}.run_parameters.txt
 
 #Set up working directory tree
 if ! [ -e ${WRKDIR} ]; then
@@ -38,6 +39,7 @@ fi
 while read ID bam sex; do
   mkdir ${WRKDIR}/${ID}
 done < ${samples_list}
+cp ${liWGS_SV}/scripts/SE_largeCNV/* ${WRKDIR}/
 
 #Link & index all bams
 echo -e "STATUS [$(date)]: Indexing BAMs..."

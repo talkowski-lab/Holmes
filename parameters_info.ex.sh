@@ -20,6 +20,7 @@ export CLASSIFIER_DIR=/data/talkowski/rlc47/code/classifier #classifier git repo
 export PYCLUSTER_DIR=/data/talkowski/rlc47/code/pycluster #pycluster git repo
 export PICARD=/data/talkowski/tools/bin/picard-tools-1.137/picard.jar #picard.jar executable
 export sambamba=/data/talkowski/tools/bin/sambamba_v0.4.6 #sambamba executable
+export DNAcopy_ref=/data/talkowski/rlc47/src/DNAcopy_reference.bindata.bed #DNAcopy reference profile
 
 #Update user paths
 export PATH=${PATH}:${CLASSIFIER_DIR}:${PYCLUSTER_DIR}
