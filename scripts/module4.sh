@@ -49,7 +49,7 @@ for contig in X Y; do
 done  
 
 #Prep for SE large CNV caller
-Rscript ${liWGS_SV}/scripts/SE_largeCNV/getwithinlibrarynorm_query.R ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${COHORT_ID} ${WRKDIR} keep 
+Rscript ${liWGS_SV}/scripts/SE_largeCNV/getwithinlibrarynorm_query.R ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${COHORT_ID} ${WRKDIR}
 
 
 #Gate until complete; 20 sec check; 5 min report

@@ -13,6 +13,7 @@ counts <- data[,-c(1,2,3)]
 colMedians <- apply(counts,2,median)
 cpm <- t(t(counts)/colMedians)
 newdata <- data.frame(data[,c(1:3)],cpm)
+colnames(newdata=c("data.Chr","data.Start","data.Stop",colnames(newdata)[-c(1:3)]))
 write.table(newdata,file=paste(outdir,"/",outputfilehandler,".query.bindata.txt",sep=""),sep="\t",row.names=F,quote=F)
 
 		
