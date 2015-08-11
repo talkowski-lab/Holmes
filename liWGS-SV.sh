@@ -50,5 +50,47 @@ done < ${samples_list}
 echo -e "STATUS [$(date)]: Beginning PHASE 1..."
 #Submit module 1 (QC)
 bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module1.log -e ${OUTDIR}/logs/module1.log -u nobody -J ${COHORT_ID}_MODULE_1 "${liWGS_SV}/scripts/module1.sh ${samples_list} ${params}"
-#Submit module 2 (per-sample clustering)
+#Submit module 2 (physical depth analysis)
 bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module2.log -e ${OUTDIR}/logs/module2.log -u nobody -J ${COHORT_ID}_MODULE_2 "${liWGS_SV}/scripts/module2.sh ${samples_list} ${params}"
+#Submit module 3 (per-sample clustering)
+bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module3.log -e ${OUTDIR}/logs/module3.log -u nobody -J ${COHORT_ID}_MODULE_3 "${liWGS_SV}/scripts/module3.sh ${samples_list} ${params}"
+
+#Gate until modules 1 & 2 complete; 20 sec check; 5 min report
+GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_1\|${COHORT_ID}_MODULE_2" | wc -l )
+GATEwait=0
+until [[ $GATEcount == 0 ]]; do
+  sleep 20s
+  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_1\|${COHORT_ID}_MODULE_2" | wc -l )
+  GATEwait=$[${GATEwait} +1]
+  if [[ $GATEwait == 15 ]]; then
+    echo -e "STATUS [$(date)]: Gated at PHASE 1a..."
+    GATEwait=0
+  fi
+done
+
+##STAGE 2a: module 4
+echo -e "STATUS [$(date)]: PHASE 1a complete; Beginning PHASE 2a..."
+#Submit module 4 (physical depth CNV calling)
+bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module4.log -e ${OUTDIR}/logs/module4.log -u nobody -J ${COHORT_ID}_MODULE_4 "${liWGS_SV}/scripts/module4.sh ${samples_list} ${params}"
+
+#Gate until module 3 complete; 20 sec check; 5 min report
+GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_3" | wc -l )
+GATEwait=0
+until [[ $GATEcount == 0 ]]; do
+  sleep 20s
+  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_3" | wc -l )
+  GATEwait=$[${GATEwait} +1]
+  if [[ $GATEwait == 15 ]]; then
+    echo -e "STATUS [$(date)]: Gated at PHASE 1b..."
+    GATEwait=0
+  fi
+done
+
+##STAGE 2b: module 5
+echo -e "STATUS [$(date)]: PHASE 1b complete; Beginning PHASE 2b..."
+# #Submit module 5 (joint clustering)
+# bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module5.log -e ${OUTDIR}/logs/module5.log -u nobody -J ${COHORT_ID}_MODULE_5 "${liWGS_SV}/scripts/module5.sh ${samples_list} ${params}"
+
+
+
+

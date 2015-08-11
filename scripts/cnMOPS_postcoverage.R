@@ -75,9 +75,9 @@ suppressPackageStartupMessages(library(BioRC))
 #list of command-line options
 option_list <- list(
   make_option(c("-m", "--mode"), type="character", default="physical",
-              help="specify coverage mode for evaluation from either 'physical' or 'insert' [default %default]", 
+              help="specify coverage mode for evaluation from either 'physical' or 'nucleotide' [default %default]", 
               metavar="character"),
-  make_option(c("-b","--binsize"), type="integer", default=100,
+  make_option(c("-b","--binsize"), type="integer", default=1000,
               help="bin size for coverage evaluation; this corresponds to one-third of the minimum call resolution [default %default]",
               metavar="integer"),
   make_option(c("-r","--rebin"), type="integer", default=1,
@@ -146,4 +146,4 @@ res <- cn.mops(cov)
 res <- calcIntegerCopyNumbers(res)
 
 #Exports CNVs
-{export(cnvs(res), paste(OUTDIR,"/",ID,".",binsize,"kbBins.cnMOPS.gff",sep=""), "GFF3")}
+{export(cnvs(res), paste(OUTDIR,"/",ID,".",binsize,"bpBins.cnMOPS.gff",sep=""), "GFF3")}

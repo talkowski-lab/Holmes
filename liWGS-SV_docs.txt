@@ -22,4 +22,19 @@ Runs the following:
 Checks for nominal QC values, reports errors to ${OUTDIR}/${COHORT_ID}_WARNINGS.txt
 Writes master QC table to ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics
 
- 
+##MODULE 2: PHYSICAL DEPTH ANALYSES##
+Runs binCov to generate 1kb binned physical depth for each library
+BGZips & tabix indexes each coverage file (for classifier)
+
+##MODULE 3: PER-SAMPLE CLUSTERING##
+Runs bamstat at min cluster size = 3 for each sample
+Removes *pairs.txt and *pairs.sorted.txt to save space
+
+##MODULE 4: PHYSICAL DEPTH CNV CALLING##
+Runs cnMOPS on autosomes on all samples
+Runs cnMOPS on allosomes on samples split by M/F. "Other" sex samples pooled with either M or F depending on ${other_assign}
+Merges cnMOPS calls per sample
+Runs Serkan's log2R DNAcopy large CNV caller ****NEED TO IMPLEMENT THIS****
+
+##MODULE 5: JOINT RECLUSTERING & CLASSIFICATION##
+<<TBD>>
