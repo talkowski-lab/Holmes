@@ -11,6 +11,11 @@ params=$2
 #Source params file
 . ${params}
 
+#Load necessary modules for SE large CNV caller
+module load intel_parallel_xe/xe
+module load R/3.1.0
+Rscript -e "if(\"DNAcopy\" %in% rownames(installed.packages()) == FALSE){source(\"http://bioconductor.org/biocLite.R\"); biocLite(\"DNAcopy\")}; suppressPackageStartupMessages(library(DNAcopy))"
+
 #Submit cnMOPS - autosomes
 mkdir ${WRKDIR}/cnMOPS
 cov=${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed
@@ -41,6 +46,10 @@ for contig in X Y; do
     bsub -u nobody q big -M 30000 -o ${OUTDIR}/logs/cnMOPS.log -e ${OUTDIR}/logs/cnMOPS.log -sla miket_sc -u rlc47 -R 'rusage[mem=30000]' -v 40000 -J ${COHORT_ID}_cnMOPS "Rscript ${liWGS_SV}/scripts/cnMOPS_postcoverage.R -m insert -r ${binsize} -b ${binsize}000 -I ${COHORT_ID}_F ${WRKDIR}/cnMOPS/${contig}/${COHORT_ID}.rawCov.chr${contig}.F.bed ${WRKDIR}/cnMOPS/${contig}/"
   done
 done  
+
+#Prep for SE large CNV caller
+Rscript getwithinlibrarynorm_query.R ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${COHORT_ID} ${WRKDIR} keep 
+
 
 #Gate until complete; 20 sec check; 5 min report
 GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_cnMOPS" | wc -l )
