@@ -10,6 +10,7 @@ params=$2
 
 #Source params file
 . ${params}
+cd ${WRKDIR}
 
 #Load necessary modules for SE large CNV caller
 module load intel_parallel_xe/xe
@@ -48,7 +49,7 @@ for contig in X Y; do
 done  
 
 #Prep for SE large CNV caller
-Rscript getwithinlibrarynorm_query.R ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${COHORT_ID} ${WRKDIR} keep 
+Rscript ${liWGS_SV}/scripts/SE_largeCNV/getwithinlibrarynorm_query.R ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${COHORT_ID} ${WRKDIR} keep 
 
 
 #Gate until complete; 20 sec check; 5 min report
