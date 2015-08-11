@@ -38,7 +38,7 @@ for contig in $( seq 1 22 ); do
   cov=${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed
   cat <( head -n1 ${cov} ) <( awk -v chr=${contig} '{ if ($1==chr) print }' ${cov} ) > ${WRKDIR}/cnMOPS/${contig}/${COHORT_ID}.rawCov.chr${contig}.bed
   for binsize in 1 3 10 30; do
-    bsub -q big -M 30000 -sla miket_sc -u rlc47 -R 'rusage[mem=30000]' -v 40000 -J ${COHORT_ID}_cnMOPS "Rscript /data/talkowski/rlc47/code/SV/cnMOPS_postcoverage.R -m pysical -r ${binsize} -b ${binsize}00 -I PE250 /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/${contig}/PE250.rawCov.chr${contig}.bed /data/talkowski/Collaboration/JaffeAssembly/cnMOPS/${contig}/"
+    bsub -q big -M 30000 -sla miket_sc -u rlc47 -R 'rusage[mem=30000]' -v 40000 -J ${COHORT_ID}_cnMOPS "Rscript ${liWGS_SV}/scripts/cnMOPS_postcoverage.R -m insert -r ${binsize} -b ${binsize}000 -I ${COHORT_ID} ${WRKDIR}/cnMOPS/${contig}/${COHORT_ID}.rawCov.chr${contig}.bed ${WRKDIR}/cnMOPS/${contig}/"
   done
 done
 for contig in $( seq 1 22 ) X Y; do

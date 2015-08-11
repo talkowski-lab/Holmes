@@ -185,7 +185,7 @@ if [ $# -eq 6 ]; then
   while read bam sample; do
     mv ${TMPDIR}/${sample}.coverage.bed ${OUTDIR}/raw_coverages/${sample}.coverage.bed
   done < ${list}
-  rm -rf ${TMPDIR}
+  # rm -rf ${TMPDIR}
 
   echo -e "COMPLETE\nFinal output written to:"
   echo "${OUTDIR}/${ID}.${mode}.cov_matrix.bed"
