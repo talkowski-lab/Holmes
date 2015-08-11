@@ -63,8 +63,8 @@ if $SORT; then
 	# TODO: Bamstat currently closes input file after sampling, 
 	# preventing use of pipes. Fix this.
 	# sambamba sort -n -o /dev/stdout $BAMFILE | bamstat -i - -d 7 -b 
-	sambamba view -f bam -F 'not (secondary_alignment or duplicate)' -o ${BAMFILE}.nosecondary.tmp_bamstat.bam ${BAMFILE}
-	sambamba sort -n -m 4GB -p -o ${BAMFILE}.tmp_nsort.bam ${BAMFILE}.nosecondary.tmp_bamstat.bam
+	/data/talkowski/tools/bin/sambamba_v0.4.6 view -f bam -F 'not (secondary_alignment or duplicate)' -o ${BAMFILE}.nosecondary.tmp_bamstat.bam ${BAMFILE}
+	/data/talkowski/tools/bin/sambamba_v0.4.6 sort -n -m 4GB -p -o ${BAMFILE}.tmp_nsort.bam ${BAMFILE}.nosecondary.tmp_bamstat.bam
 	bamstat -i ${BAMFILE}.tmp_nsort.bam -d 7 -b
 	rm ${BAMFILE}.tmp_nsort.bam ${BAMFILE}.nosecondary.tmp_bamstat.bam
 else
