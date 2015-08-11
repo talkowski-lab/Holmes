@@ -44,7 +44,7 @@ if [ $# -eq 6 ]; then
       echo "...submitting ${sample} in parallel..."
       while read contig_line; do
         contig=$( echo ${contig_line} | awk '{ print $1}' )
-        bsub -sla miket_sc -u nobody -R 'rusage[mem=4000]' -M 4000 -v 6000 -q short -o ${OUTDIR}/logfiles/splitPropPairs.out -J ${ID}_step1 "sambamba view -f bam -F 'paired and proper_pair and not (unmapped or mate_is_unmapped or duplicate or secondary_alignment)' ${bam} ${contig} | /apps/lab/miket/samtools/1.0/bin/samtools sort -T ${TMPDIR}/${sample}.${contig}.screened -O bam -m 3200M /dev/stdin > ${TMPDIR}/${sample}/${sample}.${contig}.screened.bam"
+        bsub -sla miket_sc -u nobody -R 'rusage[mem=4000]' -M 4000 -v 6000 -q short -e ${OUTDIR}/logfiles/error.txt -o ${OUTDIR}/logfiles/splitPropPairs.out -J ${ID}_step1 "sambamba view -f bam -F 'paired and proper_pair and not (unmapped or mate_is_unmapped or duplicate or secondary_alignment)' ${bam} ${contig} | /apps/lab/miket/samtools/1.0/bin/samtools sort -T ${TMPDIR}/${sample}.${contig}.screened -O bam -m 3200M /dev/stdin > ${TMPDIR}/${sample}/${sample}.${contig}.screened.bam"
       done < ${TMPDIR}/contig.list
     done < ${list}
   fi
@@ -88,13 +88,13 @@ if [ $# -eq 6 ]; then
     if [ $num_contigs -gt 1 ]; then 
      echo -e "\nMERGING & SORTING FILTERED ALIGNMENTS...\n"
      while read bam sample; do
-      bsub -sla miket_sc -u nobody -q big -R 'rusage[mem=16000]' -o ${OUTDIR}/logfiles/mergeAlignments.out -M 16000 -v 24000 -J ${ID}_mergefiltered "/data/talkowski/tools/bin/sambamba merge -l 6 ${TMPDIR}/${sample}/${sample}.merged.bam ${TMPDIR}/${sample}/${sample}.*.screened.bam; /data/talkowski/tools/bin/sambamba sort -n --tmpdir=${TMPDIR} -m 12GB -l 6 -o ${TMPDIR}/${sample}.screened.nsort.bam ${TMPDIR}/${sample}/${sample}.merged.bam"
+      bsub -sla miket_sc -u nobody -q big -R 'rusage[mem=16000]' -e ${OUTDIR}/logfiles/error.txt -o ${OUTDIR}/logfiles/mergeAlignments.out -M 16000 -v 24000 -J ${ID}_mergefiltered "/data/talkowski/tools/bin/sambamba merge -l 6 ${TMPDIR}/${sample}/${sample}.merged.bam ${TMPDIR}/${sample}/${sample}.*.screened.bam; /data/talkowski/tools/bin/sambamba sort -n --tmpdir=${TMPDIR} -m 12GB -l 6 -o ${TMPDIR}/${sample}.screened.nsort.bam ${TMPDIR}/${sample}/${sample}.merged.bam"
      done < ${list}
     elif [ $num_contigs -eq 1 ]; then
      echo -e "\nSORTING FILTERED ALIGNMENTS...\n"
      contig=$( awk '{ print $1 }' ${TMPDIR}/contig.list )
      while read bam sample; do
-      bsub -sla miket_sc -u nobody -q big -R 'rusage[mem=16000]' -o ${OUTDIR}/logfiles/mergeAlignments.out -M 16000 -v 24000 -J ${ID}_mergefiltered "/data/talkowski/tools/bin/sambamba sort -m 4GB -n -l 6 -o ${TMPDIR}/${sample}.screened.nsort.bam ${TMPDIR}/${sample}/${sample}.${contig}.screened.bam"
+      bsub -sla miket_sc -u nobody -q big -R 'rusage[mem=16000]' -e ${OUTDIR}/logfiles/error.txt -o ${OUTDIR}/logfiles/mergeAlignments.out -M 16000 -v 24000 -J ${ID}_mergefiltered "/data/talkowski/tools/bin/sambamba sort -m 4GB -n -l 6 -o ${TMPDIR}/${sample}.screened.nsort.bam ${TMPDIR}/${sample}/${sample}.${contig}.screened.bam"
      done < ${list}
     fi
     ##Gate (20 second check; 5 minute report)
@@ -117,7 +117,7 @@ if [ $# -eq 6 ]; then
   if [ ${mode} == "physical" ]; then
     echo -e "\nSYNTHESIZING FRAGMENTS...\n"
     while read bam sample; do
-      bsub -sla miket_sc -o ${OUTDIR}/logfiles/fragmentSynthesis.out -u nobody -q normal -J ${ID}_synthesizefragments "bedtools bamtobed -bedpe -i ${TMPDIR}/${sample}.screened.nsort.bam | awk -v OFS=\"\t\" '{ if (\$2>=0 && \$6>\$2) print \$1, \$2, \$6 }' > ${TMPDIR}/${sample}.fragments.bed"
+      bsub -sla miket_sc -e ${OUTDIR}/logfiles/error.txt -o ${OUTDIR}/logfiles/fragmentSynthesis.out -u nobody -q normal -J ${ID}_synthesizefragments "bedtools bamtobed -bedpe -i ${TMPDIR}/${sample}.screened.nsort.bam | awk -v OFS=\"\t\" '{ if (\$2>=0 && \$6>\$2) print \$1, \$2, \$6 }' > ${TMPDIR}/${sample}.fragments.bed"
     done < ${list}
     ##Gate (20 second check; 5 minute report)
     echo -e "\n"
@@ -139,7 +139,7 @@ if [ $# -eq 6 ]; then
   if [ ${mode} == "physical" ]; then
     echo -e "\nCALCULATING COVERAGE...\n"
     while read bam sample; do
-     bsub -sla miket_sc -u nobody -o ${OUTDIR}/logfiles/calculateCoverage.out -q big  -R 'rusage[mem=40000]' -M 40000 -v 60000 -J ${ID}_getcoverage "bedtools coverage -counts -a ${TMPDIR}/${sample}.fragments.bed -b ${TMPDIR}/binned_genome.bed > ${TMPDIR}/${sample}.unsorted.coverage.bed; sort -V -k1,1 -k2,2 ${TMPDIR}/${sample}.unsorted.coverage.bed > ${TMPDIR}/${sample}.coverage.bed"
+     bsub -sla miket_sc -u nobody -e ${OUTDIR}/logfiles/error.txt -o ${OUTDIR}/logfiles/calculateCoverage.out -q big  -R 'rusage[mem=40000]' -M 40000 -v 60000 -J ${ID}_getcoverage "bedtools coverage -counts -a ${TMPDIR}/${sample}.fragments.bed -b ${TMPDIR}/binned_genome.bed > ${TMPDIR}/${sample}.unsorted.coverage.bed; sort -V -k1,1 -k2,2 ${TMPDIR}/${sample}.unsorted.coverage.bed > ${TMPDIR}/${sample}.coverage.bed"
     done < ${list}
 
     ##Gate (20 second check; 5 minute report)
