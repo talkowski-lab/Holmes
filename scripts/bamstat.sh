@@ -105,7 +105,7 @@ mv translocation_pairs.txt transloc_pairs.txt
 # Coordinate sort each set of reads then pass to readpaircluster
 for svtype in "deletion" "insertion" "inversion" "transloc"
 do
-	bsub -q medium -o rpc.out "
+	bsub -sla miket_sc -q normal -o rpc.out -J BAMSTAT_GATE "
 sort -k2,2 -k5,5 -k3n,3n ${svtype}_pairs.txt > ${svtype}_pairs.sorted.txt;
 readPairCluster -d $DISTANCE -s $SIZE -q $MAPQ -r ${svtype}_pairs.sorted.txt > ${svtype}_clusters_d${DISTANCE}_q${MAPQ}_s${SIZE}.txt"
 done
