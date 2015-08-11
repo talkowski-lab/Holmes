@@ -34,7 +34,11 @@ Removes *pairs.txt and *pairs.sorted.txt to save space
 Runs cnMOPS on autosomes on all samples
 Runs cnMOPS on allosomes on samples split by M/F. "Other" sex samples pooled with either M or F depending on ${other_assign}
 Merges cnMOPS calls per sample
-Runs Serkan's log2R DNAcopy large CNV caller ****NEED TO IMPLEMENT THIS****
+Runs Serkan's log2R DNAcopy large CNV caller. Allosomes not split by sex; maybe include this functionality in future updates
 
 ##MODULE 5: JOINT RECLUSTERING & CLASSIFICATION##
-<<TBD>>
+Runs classifier
+Patches clusters
+Reclassifies patched clusters
+Applies final classification labels & sets coordinate reporting to be 1st or 3rd quartile of reads, respectively (to avoid overclustering/negative sizes)
+

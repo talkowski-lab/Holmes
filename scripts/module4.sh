@@ -108,3 +108,10 @@ until [[ $GATEcount == 0 ]]; do
   fi
 done
 
+#Move remaining DNAcopy samples to sample dirs
+while read ID bam sex; do
+  mv ${WRKDIR}/${ID}.SD.profile ${WRKDIR}/${ID}/DNAcopy/
+done < ${samples_list}
+
+
+

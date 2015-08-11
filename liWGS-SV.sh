@@ -90,9 +90,27 @@ done
 
 ##STAGE 2b: module 5
 echo -e "STATUS [$(date)]: PHASE 1b complete; Beginning PHASE 2b..."
-# #Submit module 5 (joint clustering)
-# bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module5.log -e ${OUTDIR}/logs/module5.log -u nobody -J ${COHORT_ID}_MODULE_5 "${liWGS_SV}/scripts/module5.sh ${samples_list} ${params}"
+#Submit module 5 (joint clustering)
+bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module5.log -e ${OUTDIR}/logs/module5.log -u nobody -J ${COHORT_ID}_MODULE_5 "${liWGS_SV}/scripts/module5.sh ${samples_list} ${params}"
 
+#Gate until modules 4 & 5 complete; 20 sec check; 5 min report
+GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_4\|${COHORT_ID}_MODULE_5" | wc -l )
+GATEwait=0
+until [[ $GATEcount == 0 ]]; do
+  sleep 20s
+  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_4\|${COHORT_ID}_MODULE_5" | wc -l )
+  GATEwait=$[${GATEwait} +1]
+  if [[ $GATEwait == 15 ]]; then
+    echo -e "STATUS [$(date)]: Gated at PHASE 2..."
+    GATEwait=0
+  fi
+done
 
+# ##STAGE 3: modules 6 and 7
+# echo -e "STATUS [$(date)]: Beginning PHASE 3..."
+# #Submit module 6 (consensus CNV merging)
+# bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module6.log -e ${OUTDIR}/logs/module6.log -u nobody -J ${COHORT_ID}_MODULE_6 "${liWGS_SV}/scripts/module6.sh ${samples_list} ${params}"
+# #Submit module 7 (complex SV categorization)
+# bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module7.log -e ${OUTDIR}/logs/module7.log -u nobody -J ${COHORT_ID}_MODULE_7 "${liWGS_SV}/scripts/module7.sh ${samples_list} ${params}"
 
 

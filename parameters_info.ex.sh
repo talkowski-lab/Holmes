@@ -11,6 +11,7 @@ export COHORT_ID=test #cohort ID (string)
 export OUTDIR=/scratch/miket/rlc47temp/liWGS-SV_${COHORT_ID} #output directory - only final outputs will be written here
 export WRKDIR=/scratch/miket/rlc47temp/tmp.files/${COHORT_ID}_liWGS-SV #working directory - all temp files will be written here. May temporarily need lots of storage, so best to avoid writing to /tmp
 export other_assign=MALE #sex group to assign "other" sex for depth-based calling. must be either "MALE" or "FEMALE"
+export uscore_skip=1 #underscore skip; determines how many underscores in clustering read ID are assumed to be a part of sample ID; e.g. format like "STUDY_SAMPLE" should have uscore_skip=1, etc
 
 #Full paths for reference files & executables 
 export liWGS_SV=/data/talkowski/rlc47/code/liWGS-SV #path to liWGS-SV git repo
