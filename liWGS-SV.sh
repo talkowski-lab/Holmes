@@ -50,3 +50,5 @@ done < ${samples_list}
 echo -e "STATUS [$(date)]: Beginning PHASE 1..."
 #Submit module 1 (QC)
 bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module1.log -e ${OUTDIR}/logs/module1.log -u nobody -J ${COHORT_ID}_MODULE_1 "${liWGS_SV}/scripts/module1.sh ${samples_list} ${params}"
+#Submit module 2 (per-sample clustering)
+bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module2.log -e ${OUTDIR}/logs/module2.log -u nobody -J ${COHORT_ID}_MODULE_2 "${liWGS_SV}/scripts/module2.sh ${samples_list} ${params}"
