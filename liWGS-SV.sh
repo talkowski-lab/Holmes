@@ -49,5 +49,4 @@ done < ${samples_list}
 ##STAGE 1: modules 1, 2, and 3
 echo -e "STATUS [$(date)]: Beginning PHASE 1..."
 #Submit module 1 (QC)
-
-
+bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module1.log -e ${OUTDIR}/logs/module1.log -u nobody -J ${COHORT_ID}_MODULE_1 "${liWGS_SV}/scripts/module1.sh ${samples_list} ${params}"
