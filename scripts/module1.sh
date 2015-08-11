@@ -59,6 +59,8 @@ Rscript -e "x <- read.table(\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsEx
 Rscript -e "x <- read.table(\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsExp.bed\",header=T); x[,4:ncol(x)] <- t(abs(apply(x[,4:ncol(x)],1,scale))); write.table(x,\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_absoluteZscores.bed\",row.names=F,col.names=T,sep=\"\\t\",quote=F)"
 
 #Collect summary for each sample
+echo -e "##liWGS-SV PIPELINE COHORT QC\n##RUN DATE: $( echo $(date) | awk '{ print $1, $2, $3, $NF }' )\n\
+#ID\tTotal_Pairs\tRead_Aln_Rate\tPair_Aln_Rate\tProper\tChimera\tRead_Dup\tPair_Dup\tMedian_Insert\tInsert_MAD\tHap_Phys_Cov\tHap_Nuc_Cov\tReported_Sex\tObserved_Sex\tAbs_Dosage_ZScore" > ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics
 while read ID bam sex; do
   total=$( grep '^PAIR' ${OUTDIR}/QC/sample/${ID}/${ID}.alignment_summary_metrics | awk '{ print $2 }' ) #total reads in BAM
   rd_aln=$( grep '^PAIR' ${OUTDIR}/QC/sample/${ID}/${ID}.alignment_summary_metrics | awk '{ print $6 }' ) #reads aligned
@@ -70,14 +72,33 @@ while read ID bam sex; do
   pr_dup=$( grep -A1 '^LIBRARY' ${OUTDIR}/QC/sample/${ID}/${ID}.complexity | tail -n1 | awk '{ print $(NF-1) }' ) #pair dup rate
   chim=$( grep '^PAIR' ${OUTDIR}/QC/sample/${ID}/${ID}.alignment_summary_metrics | awk '{ print $21 }' ) #chimera pct
   mis=$( awk '{ if ($8=="FR") print $1 }' ${OUTDIR}/QC/sample/${ID}/${ID}.insert_size_metrics ) #MIS
-  ismad=$( awk '{ if ($8=="RF") print $2 }' ${OUTDIR}/QC/sample/${ID}/${ID}.insert_size_metrics ) #ISMAD
+  ismad=$( awk '{ if ($8=="FR") print $2 }' ${OUTDIR}/QC/sample/${ID}/${ID}.insert_size_metrics ) #ISMAD
   icov=$( echo "scale=2;(( ( ( ${pr_aln}/2 )*${prop}*( 1-${pr_dup} )*${mis} )/${genome_size} ))" | bc ) #calculate insert coverage, uses n-masked size of grch37 defined above
   ncov=$( grep -A1 '^GENOME_TERRITORY' ${OUTDIR}/QC/sample/${ID}/${ID}.wgs | tail -n1 | awk '{ print $2 }' ) #nucleotide cov
-  osex=$( fgrep  )
-  echo -e "${ID}\t${total}\t${rd_aln_rt}\t${pr_aln_rt}\t${prop}\t${chim}\t${rd_dup}\t${pr_dup}\t${mis}\t${ismad}\t${icov}\t${ncov}\t${sex}\t${osex}" #print metrics
+  osex=$( fgrep -w "PREDICTED SEX" ${OUTDIR}/QC/sample/${ID}/${ID}.sexCheck | awk '{ print $3 }' ) #predicted sex from sexcheck.sh
+  index=$( echo "$( awk -v OFS="\t" '{ print NR, $1 }' ${samples_list} | fgrep -w ${ID} | cut -f1 )+3" | bc )
+  dosage=$( awk -v idx=${index} '{ print $idx }' ${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_absoluteZscores.bed | sed '1d' | fgrep -v NA | sort -nk1,1 | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' )
+  echo -e "${ID}\t${total}\t${rd_aln_rt}\t${pr_aln_rt}\t${prop}\t${chim}\t${rd_dup}\t${pr_dup}\t${mis}\t${ismad}\t${icov}\t${ncov}\t${sex}\t${osex}\t${dosage}" #print metrics
+done < ${samples_list} >> ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics
 
-
-
-
-
-
+#Print warnings
+while read ID total rd_aln_rt pr_aln_rt prop chim rd_dup pr_dup mis ismad icov ncov sex osex dosage; do
+  if [ $( echo "${rd_aln_rt} < 0.8" | bc) -eq 1 ] || [ $( echo "${pr_aln_rt} < 0.8" | bc) -eq 1 ]; then
+    echo "WARNING [MODULE 1]: ${ID} alignment rate < 80%"
+  fi
+  if [ $( echo "${chim} >= 0.8" | bc) -eq 1 ]; then
+    echo "WARNING [MODULE 1]: ${ID} chimera rate ≥ 30%"
+  fi
+  if [ $( echo "${ismad} >= 700" | bc) -eq 1 ]; then
+    echo "WARNING [MODULE 1]: ${ID} median insert size is widely distributed (${ismad}bp)"
+  fi
+  if [ $( echo "${icov} < 30" | bc) -eq 1 ]; then
+    echo "WARNING [MODULE 1]: ${ID} haploid physical coverage < 30X"
+  fi
+  if [ $( echo "${dosage} > 1" | bc) -eq 1 ]; then
+    echo "WARNING [MODULE 1]: ${ID} WGS dosage absolute Z-score > 1"
+  fi
+  if [ ${sex} != ${osex} ]; then
+    echo "WARNING [MODULE 1]: ${ID} predicted sex does not match reported sex"
+  fi
+done < <( fgrep -v "#" ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics ) > ${OUTDIR}/${COHORT_ID}_WARNINGS.txt
