@@ -7,62 +7,34 @@
 #---------------------------
 
 #First Argument should be list (txt file) of CNVs to check in the following format chr,bp1,bp2,CNVID ##
-###Second Argument vector specifying cohorts or samples for normalization ###
+###Second Argument full path to coverage matrix for cohort ###
 ###Third Argument scaling of each column to mean or median
 ##Fourth Argument output type, either genotype or kmeans
 ##FIFTH Argument CNV type, recommend "both" which looks for both del and dup, but can also specify del or dup###
 ##Sixth Argument, How many bins to normalize across in the deletion### 
 ##Seventh File name for output###
 
-#export PATH=/PHShome/jtg24/R-3.1.2/bin:$PATH
-#1_54797114_54797344_1
-
-chr<-1
-start<-54797114#177264817#15793314#50776000#24280142
-end<-54797344#177272879#15817097#50928000#24286682
-batch<-1
-normMid="median"
-ID="Default"
-output="genotype"
-type="both"
-bins=10   
-normDist=30000000
-tscore="T"
-tscoreoutput="tscore.txt"
-commonallele=NULL
-z.pvaluecutoff=1e-9
-
-
 args <- commandArgs(TRUE)
 
-samplesBlacklisted <- c("SFARI_p6D12","SFARI_p6F05","SFARI_p4E11","SFARI_p4D06","SFARI_15939815","SFARI_p4F01","SFARI_15935029","SFARI_p6D04","SFARI_p4E09","SFARI_p6F04","SFARI_p6G02","SFARI_p6E05","SFARI_p4F02","SFARI_p6E03","SFARI_p6E08","SFARI_p4D12","SFARI_p4D07","SFARI_p4F10","SFARI_15937460","SFARI_p6C12","SFARI_15936142","SFARI_16042092","SFARI_p6C04","SFARI_15939811","SFARI_12591p1","SFARI_12591fa","SFARI_12591mo","SFARI_p6F02","SFARI_p6E07","SFARI_p6E06","SFARI_p6E04","SFARI_p4H01","SFARI_p4F05","SFARI_16042095","SFARI_15937371","SFARI_15936975","SFARI_15936895","SFARI_15936763","SFARI_15936760","SFARI_15936751","SFARI_15936745","SFARI_15936181","SFARI_15936159","SFARI_15936152","SFARI_15936746","SFARI_p4F08","SFARI_p4F09","SFARI_p6D01","SFARI_JSB02","SFARI_JSB04","SFARI_JSB10","SFARI_JSpD06","SFARI_JSpD10","SFARI_JSpE02","SFARI_JSp7A12")
-
 genotypeCov <- function(chr,start,end,            #region to be genotyped
-                        batch,                    #SFARI batch (1,2=Eco, 3=JS)
                         normMid="median",         #scaling of each column to mean or median
                         ID="Default",    		      #CNV ID
                         output="genotype",			  #output type, either genotype or kmeans, kmeans will not work on smaller samples 
                         type="both",				    	#CNV type both or (del,dup)
-                        bins=10,			              #How many bins			
+                        bins=10,			            #How many bins			
                         normDist=30000000,        #distance outside region to normalize
-                        tscore="T",               #Include a t-score for calls T of F
-                        tscoreoutput="tscore.txt",#tscore ouput file to use
-                        commonallele=NULL,      #List providing assigned common alleles (variant name, kmean allele(0,1,2,3,4)) No header!
-                        z.pvaluecutoff=1e-9      #z test pvalue cutoff
+                        tscore=TRUE,              #Include a t-score for calls T of F
+                        commonallele=NULL,        #List providing assigned common alleles (variant name, kmean allele(0,1,2,3,4)) No header!
+                        z.pvaluecutoff=1e-9       #z test pvalue cutoff
 ){       
-  
-  #dbDisconnect(TGDB)
   ##Checks for appropriate input##
   if(!(is.numeric(c(start,end)) & end > start)){
     stop("INPUT ERROR: Improper input coordinates")}
   if(!(normMid %in% c("mean","median"))){
     stop('INPUT ERROR: Specify "mean" or "median" for normMetric')}
   
-  cat(paste(chr,"_",start,"_",end,"_",batch,"\n",sep=""))
-  write.table(paste(chr,"_",start,"_",end,"_",batch,".txt",sep=""),paste(chr,"_",start,"_",end,"_",batch,"_RangesRan.txt",sep="")) ## To keep track of Ranges Ran since output not always generated
-  
   ##Ensures Standard Decimal Notation##
-  options(scipen=400)
+  options(scipen=1000)
   
   ##Loads required packages; installs if necessary##
   if("plyr" %in% rownames(installed.packages()) == FALSE)
@@ -99,54 +71,14 @@ genotypeCov <- function(chr,start,end,            #region to be genotyped
     Rend<-end
     compression=1
   }
-  
-  ##Connects to TGDB##
-  cat("Attempting to connect to TGDB...")
-  TGDB <- dbConnect(MySQL(),
-                    user="talkLab",
-                    password="Talkow_1",
-                    dbname='TalkowskiGenomicsDB',
-                    host='mysql2.dipr.partners.org')
-  cat(" Success!\n")
-  
-  ##Table assignment##
-  if(batch==1){
-    table <- "SFARI_B1_FragCount1kbBins"
-  }else if(batch==2){
-    table <- "SFARI_B2_FragCount1kbBins"
-  }else{
-    table <- "SFARI_JS_FragCount1kbBins"
-  }
-  
-  ##Define Columns to Load##
-  samples <- c(unlist(sapply(c("SFARI"),function(cohort){
-    return(dbGetQuery(TGDB,paste("DESCRIBE ",table,sep=""))$Field[grep("SFARI",
-                                                                       dbGetQuery(TGDB,
-                                                                                  paste("DESCRIBE SFARI_B",batch,"_FragCount1kbBins",sep=""))$Field,
-                                                                       ignore.case=T)])}),use.names=F))
-  
-  samples <- sapply(samples,function(val){
-  if(!val %in% samplesBlacklisted)
-  {
-    return(paste("`",val,"`",sep=""))
-  }
-  })
-  samples <- samples[ ! sapply(samples, is.null) ]
-  colsToLoad <- paste(c("`Chr`","`Start`","`End`",samples),collapse=", ")
-  
+
   ##Load Plotting Values##
-  cat("Querying coverage database... ")
-  cov <- dbGetQuery(TGDB,
-                    paste("SELECT ",colsToLoad," ",
-                          "FROM ",table," ",
-                          "WHERE `Chr` = '",chr,"' ",
-                          "AND `Start` <= ",end+normDist," ",
-                          "AND `End` >= ",start-normDist,
-                          sep=""))
-  cat("Complete!\n")
+  cov <- read.table(args[2],header=T,sep="\t")
+  #Subset res to region of interest
+  cov1 <- cov[which(cov$Start<=Rend & cov$Stop>=(Rstart-1) & cov$Chr==chr),]
   
   ###Replace zero values with 1 for handling normalization###
-  cov[cov==0]<-1
+  cov1[cov1==0]<-1
   
   ##Rebin FX##
   rebin <- function(df,compression){
@@ -171,10 +103,10 @@ genotypeCov <- function(chr,start,end,            #region to be genotyped
   
   ##Rebins values##
   if(compression>1){
-    res <- rebin(cov,compression) 
+    res <- rebin(cov1,compression) 
     res<-apply(res[,4:ncol(res)],2,function(val){as.numeric(as.matrix(val))})	
   } else {
-    res <- cov[,4:ncol(cov)]
+    res <- cov1[,4:ncol(cov1)]
   }
   ###Take Average###
   if(normMid=="mean"){
@@ -183,23 +115,6 @@ genotypeCov <- function(chr,start,end,            #region to be genotyped
     norm<-apply(res,2,median)
   }
   
-  cov1 <- dbGetQuery(TGDB,
-                     paste("SELECT ",colsToLoad," ",
-                           "FROM ",table," ",
-                           "WHERE `Chr` = '",chr,"' ",
-                           "AND `Start` <= ",Rend-1," ",
-                           "AND `End` >= ",Rstart,
-                           sep=""))	
-    cat("Complete2!\n")
-  ###replace zero values with 1 for handling normalization###	
-  cov1[cov1==0]<-1
-  
-  if(compression>1){
-    res<-rebin(cov1,compression)    
-    res<-apply(res[,4:ncol(res)],2,function(val){as.numeric(as.matrix(val))})	
-  } else {
-    res <- cov1[,4:ncol(cov1)]
-  }
   res1<-rbind(res,t(data.frame(norm)))
   
   ##Scale each col within that sample##
