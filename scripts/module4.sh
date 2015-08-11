@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#liWGS-SV Pipeline: Module 5 (Physical Depth CNV Calling)
+#liWGS-SV Pipeline: Module 4 (Physical Depth CNV Calling)
 #August 2015
 #Contact: rcollins@chgr.mgh.harvard.edu
 
