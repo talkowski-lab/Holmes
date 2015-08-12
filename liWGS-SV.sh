@@ -108,9 +108,9 @@ done
 
 ##STAGE 3: modules 6 and 7
 echo -e "STATUS [$(date)]: Beginning PHASE 3..."
-#Submit module 6 (consensus CNV merging)
-bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module6.log -e ${OUTDIR}/logs/module6.log -u nobody -J ${COHORT_ID}_MODULE_6 "${liWGS_SV}/scripts/module6.sh ${samples_list} ${params}"
-# #Submit module 7 (complex SV categorization)
-# bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module7.log -e ${OUTDIR}/logs/module7.log -u nobody -J ${COHORT_ID}_MODULE_7 "${liWGS_SV}/scripts/module7.sh ${samples_list} ${params}"
+# #Submit module 6 (consensus CNV merging)
+# bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module6.log -e ${OUTDIR}/logs/module6.log -u nobody -J ${COHORT_ID}_MODULE_6 "${liWGS_SV}/scripts/module6.sh ${samples_list} ${params}"
+#Submit module 7 (complex SV categorization)
+bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module7.log -e ${OUTDIR}/logs/module7.log -u nobody -J ${COHORT_ID}_MODULE_7 "${liWGS_SV}/scripts/module7.sh ${samples_list} ${params}"
 
 
