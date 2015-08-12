@@ -92,7 +92,7 @@ genotypeCov <- function(chr,start,end,            #region to be genotyped
   compression=compression_size/1000
   
   #Set compression
-  if(Rend-Rstart<5000){
+  if(Rend-Rstart<=5000){
     Rstart<-start
     Rend<-end
     compression=1
@@ -321,8 +321,12 @@ genotypeCov <- function(chr,start,end,            #region to be genotyped
     genoids18<-names[which(genotype[,5:ncol(genotype)]==18)]
     genoids19<-names[which(genotype[,5:ncol(genotype)]==19)]
     genoids20<-names[which(genotype[,5:ncol(genotype)]==20)]
-    if(length(genoids)>0){
+    if(length(genoids)>1){
       kmeanwgeno<-apply(kmean_matrix[genoids,],1,mean)
+      }else{
+        kmeanwgeno<-mean(kmean_matrix[genoids,])
+      }
+    
       
       ###Z-Test to compare between individual samples and maximum sample group### 
       for (i in 0:20){ 
@@ -343,7 +347,6 @@ genotypeCov <- function(chr,start,end,            #region to be genotyped
           genotype1[fail,]<-genoMode
           genotype<-t(genotype1)
       }
-    }
     }
   }
   
