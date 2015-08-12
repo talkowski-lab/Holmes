@@ -20,6 +20,12 @@ mkdir ${WRKDIR}/consensusCNV
 #Genotype all CNV intervals if cohort has ≥ 30 samples
 if [ $( cat ${samples_list} | wc - ) -ge ${min_geno} ]; then
   #Create master file of all CNV intervals
+  if [ -e ${WRKDIR}/consensusCNV/dels_to_merge.list ]; then
+    rm ${WRKDIR}/consensusCNV/dels_to_merge.list
+  fi
+  if [ -e ${WRKDIR}/consensusCNV/dups_to_merge.list ]; then
+    rm ${WRKDIR}/consensusCNV/dups_to_merge.list
+  fi
   while read ID bam sex; do
     fgrep Valid ${WRKDIR}/classifier/clusterfix/newCoords/deletion.events.reclassified.bedpe | fgrep -w ${ID} | awk -v ID=${ID} -v OFS="\t" '{ print $1, $3, $5, ID, $7 }' > ${WRKDIR}/${ID}/classifier.dels.bed
     fgrep Valid ${WRKDIR}/classifier/clusterfix/newCoords/insertion.events.reclassified.bedpe | fgrep -w ${ID} | awk -v ID=${ID} -v OFS="\t" '{ print $1, $3, $5, ID, $7 }' > ${WRKDIR}/${ID}/classifier.dups.bed
@@ -38,5 +44,20 @@ else
     ${liWGS_SV}/scripts/consensusCNV_noGeno.sh ${WRKDIR}/classifier/clusterfix/newCoords/deletion.events.reclassified.bedpe ${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed ${WRKDIR}/${ID}/DNAcopy.dels.bed ${ID} del ${params}
     ${liWGS_SV}/scripts/consensusCNV_noGeno.sh ${WRKDIR}/classifier/clusterfix/newCoords/insertion.events.reclassified.bedpe ${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed ${WRKDIR}/${ID}/DNAcopy.dups.bed ${ID} dup ${params}
   done < ${samples_list}
-  
+fi
+
+#Merge all consensus CNVs
+if [ -e ${WRKDIR}/consensus_del_to_merge.list ]; then
+  rm ${WRKDIR}/consensus_del_to_merge.list
+fi
+if [ -e ${WRKDIR}/consensus_dup_to_merge.list ]; then
+  rm ${WRKDIR}/consensus_dup_to_merge.list
+fi
+while read ID bam sex; do
+  echo -e "${ID}\t${WRKDIR}/${ID}/${ID}.consensus.del.bed" >> ${WRKDIR}/consensus_del_to_merge.list
+  echo -e "${ID}\t${WRKDIR}/${ID}/${ID}.consensus.dup.bed" >> ${WRKDIR}/consensus_dup_to_merge.list
+done < ${samples_list}
+${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensus_del_to_merge.list 10000 ${COHORT_ID}_consensus_dels ${WRKDIR}/consensusCNV/
+${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensus_dup_to_merge.list 10000 ${COHORT_ID}_consensus_dups ${WRKDIR}/consensusCNV/
+
 

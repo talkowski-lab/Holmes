@@ -60,3 +60,4 @@ Consensus Groups without Genotyping:
     C [MED]: valid cluster, cnMOPS support, ≥30% blacklist
     D [LOW]: cnMOPS call, ≥50kb, ≥30% blacklist
     E [LOW]: valid cluster, <25kb, no cnMOPS support
+Returns single merged file each for consensus dels and consensus dups
