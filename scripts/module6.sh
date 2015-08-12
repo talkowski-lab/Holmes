@@ -12,7 +12,7 @@ params=$2
 . ${params}
 
 #Set other params
-min_geno=30 #minimum cohort size for incorporating CNV genotype information into consensus script
+min_geno=20 #minimum cohort size for incorporating CNV genotype information into consensus script
 
 #Create working directory for consensus CNVs
 mkdir ${WRKDIR}/consensusCNV

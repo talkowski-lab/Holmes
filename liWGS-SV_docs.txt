@@ -32,7 +32,9 @@ Runs binCov to generate 1kb binned physical depth for each library
 BGZips & tabix indexes each coverage file (for classifier)
 
 ##MODULE 3: PER-SAMPLE CLUSTERING##
-Runs bamstat at min cluster size = 3 for each sample
+**Rate-limiting step of entire pipeline**
+If ${pre_bamstat} isn't set as "TRUE", bamstat is run at min cluster size = 3 for each sample
+If ${pre_bamstat}="TRUE", bamstat clusters are copied from preexisting paths
 Removes *pairs.txt and *pairs.sorted.txt to save space
 
 ##MODULE 4: PHYSICAL DEPTH CNV CALLING##
