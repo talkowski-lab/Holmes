@@ -34,7 +34,7 @@ BGZips & tabix indexes each coverage file (for classifier)
 ##MODULE 3: PER-SAMPLE CLUSTERING##
 **Rate-limiting step of entire pipeline**
 If ${pre_bamstat} isn't set as "TRUE", bamstat is run at min cluster size = 3 for each sample
-If ${pre_bamstat}="TRUE", bamstat clusters are copied from preexisting paths
+If ${pre_bamstat}="TRUE", bamstat clusters and stats.file are copied from preexisting paths to ${WRKDIR}
 Removes *pairs.txt and *pairs.sorted.txt to save space
 
 ##MODULE 4: PHYSICAL DEPTH CNV CALLING##
