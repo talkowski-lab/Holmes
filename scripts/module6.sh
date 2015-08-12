@@ -34,10 +34,25 @@ if [ $( cat ${samples_list} | wc - ) -ge ${min_geno} ]; then
     echo -e "${ID}_classifier\t${WRKDIR}/${ID}/classifier.dels.bed\n${ID}_cnMOPS\t${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed\n${ID}_DNAcopy\t${WRKDIR}/${ID}/DNAcopy.dels.bed" >> ${WRKDIR}/consensusCNV/dels_to_merge.list
     echo -e "${ID}_classifier\t${WRKDIR}/${ID}/classifier.dups.bed\n${ID}_cnMOPS\t${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed\n${ID}_DNAcopy\t${WRKDIR}/${ID}/DNAcopy.dups.bed" >> ${WRKDIR}/consensusCNV/dups_to_merge.list
   done < ${samples_list}
-  ${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensusCNV/dels_to_merge.list 10000 ${COHORT_ID}_del_intervals ${WRKDIR}/consensusCNV/
-  ${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensusCNV/dups_to_merge.list 10000 ${COHORT_ID}_dup_intervals ${WRKDIR}/consensusCNV/
-  ## ****ADD GENOTYPING HERE****
-  ## ****ADD REVISED CONSENSUS PIPELINE WITH GENOTYPING INFO HERE****
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/mergeCNVinterval.log -e ${OUTDIR}/logs/mergeCNVinterval.log -J ${COHORT_ID}_MERGE "${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensusCNV/dels_to_merge.list 10000 ${COHORT_ID}_del_intervals ${WRKDIR}/consensusCNV/"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/mergeCNVinterval.log -e ${OUTDIR}/logs/mergeCNVinterval.log -J ${COHORT_ID}_MERGE "${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensusCNV/dups_to_merge.list 10000 ${COHORT_ID}_dup_intervals ${WRKDIR}/consensusCNV/"
+
+  #Gate until complete; 20 sec check; 5 min report
+  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MERGE" | wc -l )
+  GATEwait=0
+  until [[ $GATEcount == 0 ]]; do
+    sleep 20s
+    GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MERGE" | wc -l )
+    GATEwait=$[${GATEwait} +1]
+    if [[ $GATEwait == 15 ]]; then
+      echo -e "STATUS [$(date)]: Waiting on ${GATEcount} jobs..."
+      GATEwait=0
+    fi
+  done
+
+  #Genotype all consensus intervals
+  module load R/3.1.0
+
 else
   echo "WARNING [MODULE 6]: Cohort has fewer than ${min_geno} samples; consensus CNVs will not incorporate joint genotyping information" >> ${OUTDIR}/${COHORT_ID}_WARNINGS.txt
   while read ID bam sex; do

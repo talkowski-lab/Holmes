@@ -170,3 +170,15 @@ echo -e "STATUS [$(date)]: Beginning PHASE 3..."
 bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module7.log -e ${OUTDIR}/logs/module7.log -u nobody -J ${COHORT_ID}_MODULE_7 "${liWGS_SV}/scripts/module7.sh ${samples_list} ${params}"
 
 
+
+
+
+##PRINT SUMMARY METRICS AT END OF RUN##
+
+#Remove working directory unless specified otherwise
+if ! [ ${KEEP_TMP}=="TRUE" ]; then
+  rm -rf ${WRKDIR}
+fi
+
+#Print final completion notice
+echo -e "-----\nSTATUS [$(date)]: Holmes liWGS-SV discovery on ${COHORT_ID} complete\n-----\n\n"
