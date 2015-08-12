@@ -42,3 +42,21 @@ Patches clusters
 Reclassifies patched clusters
 Applies final classification labels & sets coordinate reporting to be 1st or 3rd quartile of reads, respectively (to avoid overclustering/negative sizes)
 
+##MODULE 6: CONSENSUS CNV CALLING##
+Runs in one of two modes: with or without genotyping information
+Mode chosen by parameter ${min_geno}, set in module6.sh, which corresponds to the minimum number of samples in the cohort to use genotyping
+Consensus Groups with Genotyping:
+	A [HIGH]: Valid cluster, cnMOPS or genotyping support, <30% blacklist
+	B [HIGH]: cnMOPS call, ≥50kb, <30% blacklist, genotyping pass, no clustering overlap
+	C [MED]: cnMOPS call, <50kb, genotyping pass, <30% blacklist
+	D [MED]: valid cluster, genotyping or cnMOPS support, ≥30% blacklist
+	E [MED]: cnMOPS call, ≥50kb, genotyping pass, ≥30% blacklist
+	F [LOW]: cnMOPS call, ≥50kb, no clustering support, no genotyping support
+	G [LOW]: cnMOPS call, <50kb, genotyping pass, ≥30% blacklist
+	H [LOW]: valid cluster, <25kb, no cnMOPS or genotyping support
+Consensus Groups without Genotyping:
+    A [HIGH]: Valid cluster, cnMOPS support, <30% blacklist
+    B [MED]: cnMOPS call, ≥50kb, <30% blacklist, no clustering overlap
+    C [MED]: valid cluster, cnMOPS support, ≥30% blacklist
+    D [LOW]: cnMOPS call, ≥50kb, ≥30% blacklist
+    E [LOW]: valid cluster, <25kb, no cnMOPS support
