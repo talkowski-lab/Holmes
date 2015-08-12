@@ -9,6 +9,11 @@ liWGS_SV.sh samples.list parameters_info.sh
 samples.list: three columns, tab delimited, col 1) sample ID, col 2) full path to sample bam, col 3) expected sex (M=XY, F=XX, O=other, U=unknown (will defer to predicted sex by sexcheck))
 parameters_info.sh: shell script to export all parameters for pipeline run
 
+##PRE-MODULE STEPS##
+Symlinks & indexes all bams
+Creates working and output directory trees
+Loads necessary modules
+
 ##MODULE 1: QC##
 Runs the following:
 	Picard EstimateLibraryComplexity
@@ -45,6 +50,7 @@ Applies final classification labels & sets coordinate reporting to be 1st or 3rd
 ##MODULE 6: CONSENSUS CNV CALLING##
 Runs in one of two modes: with or without genotyping information
 Mode chosen by parameter ${min_geno}, set in module6.sh, which corresponds to the minimum number of samples in the cohort to use genotyping
+***NEED TO ADD GENOTYPING***
 Consensus Groups with Genotyping:
 	A [HIGH]: Valid cluster, cnMOPS or genotyping support, <30% blacklist
 	B [HIGH]: cnMOPS call, ≥50kb, <30% blacklist, genotyping pass, no clustering overlap
@@ -61,3 +67,14 @@ Consensus Groups without Genotyping:
     D [LOW]: cnMOPS call, ≥50kb, ≥30% blacklist
     E [LOW]: valid cluster, <25kb, no cnMOPS support
 Returns single merged file each for consensus dels and consensus dups
+
+##MODULE 7: COMPLEX SV CATEGORIZATION##
+Runs inversion classification script
+Runs translocation classification script
+**NEED TO ADD HARRISON COMPLEX SCRIPT**
+**NEED TO ADD COMPLEX SCRIPT PARSER**
+
+
+
+
+
