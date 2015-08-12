@@ -321,27 +321,29 @@ genotypeCov <- function(chr,start,end,            #region to be genotyped
     genoids18<-names[which(genotype[,5:ncol(genotype)]==18)]
     genoids19<-names[which(genotype[,5:ncol(genotype)]==19)]
     genoids20<-names[which(genotype[,5:ncol(genotype)]==20)]
-    kmeanwgeno<-apply(kmean_matrix[genoids,],1,mean)
-    
-    ###Z-Test to compare between individual samples and maximum sample group###	
-    for (i in 0:20){ 
-      temp<-paste("genoids",i,sep="")
-      if (length(eval(parse(text = temp)))>0 && genoMode>i ){
-        ztest<-function(dataset,mu) {1-pnorm((mean(dataset)-mu)/sd(dataset))} 
-      }else if (length(eval(parse(text = temp)))>0 && genoMode<i){
-        ztest<-function(dataset,mu) {pnorm((mean(dataset)-mu)/sd(dataset))}
+    if(length(genoids)>0){
+      kmeanwgeno<-apply(kmean_matrix[genoids,],1,mean)
+      
+      ###Z-Test to compare between individual samples and maximum sample group### 
+      for (i in 0:20){ 
+        temp<-paste("genoids",i,sep="")
+        if (length(eval(parse(text = temp)))>0 && genoMode>i ){
+          ztest<-function(dataset,mu) {1-pnorm((mean(dataset)-mu)/sd(dataset))} 
+        }else if (length(eval(parse(text = temp)))>0 && genoMode<i){
+          ztest<-function(dataset,mu) {pnorm((mean(dataset)-mu)/sd(dataset))}
+        }
+        if (length(eval(parse(text = temp)))>0 && genoMode!=i){
+          kmeannogeno<-apply(kmean_matrix[setdiff(eval(parse(text = temp)),genoids),,drop=FALSE],1,mean)
+          tscore<-matrix(apply(as.matrix(kmeannogeno),2,function(x){ztest(kmeanwgeno,x)}))
+          tscore1<-matrix(paste(ID,tscore))
+          row.names(tscore)<-names(kmeannogeno)
+          row.names(tscore1)<-names(kmeannogeno)
+          fail<-names(tscore[which(tscore[,1]>z.pvaluecutoff),])
+          genotype1<-t(genotype)
+          genotype1[fail,]<-genoMode
+          genotype<-t(genotype1)
       }
-      if (length(eval(parse(text = temp)))>0 && genoMode!=i){
-        kmeannogeno<-apply(kmean_matrix[setdiff(eval(parse(text = temp)),genoids),,drop=FALSE],1,mean)
-        tscore<-matrix(apply(as.matrix(kmeannogeno),2,function(x){ztest(kmeanwgeno,x)}))
-        tscore1<-matrix(paste(ID,tscore))
-        row.names(tscore)<-names(kmeannogeno)
-        row.names(tscore1)<-names(kmeannogeno)
-        fail<-names(tscore[which(tscore[,1]>z.pvaluecutoff),])
-        genotype1<-t(genotype)
-        genotype1[fail,]<-genoMode
-        genotype<-t(genotype1)
-      }
+    }
     }
   }
   

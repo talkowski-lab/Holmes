@@ -51,7 +51,21 @@ if [ $( cat ${samples_list} | wc - ) -ge ${min_geno} ]; then
   done
 
   #Genotype all consensus intervals
-  module load R/3.1.0
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV.R ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.genotypes.bed"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV.R ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_intervals.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_intervals.merged.genotypes.bed"
+
+  #Gate until complete; 20 sec check; 5 min report
+  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_genotyping" | wc -l )
+  GATEwait=0
+  until [[ $GATEcount == 0 ]]; do
+    sleep 20s
+    GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_genotyping" | wc -l )
+    GATEwait=$[${GATEwait} +1]
+    if [[ $GATEwait == 15 ]]; then
+      echo -e "STATUS [$(date)]: Waiting on ${GATEcount} jobs..."
+      GATEwait=0
+    fi
+  done
 
 else
   echo "WARNING [MODULE 6]: Cohort has fewer than ${min_geno} samples; consensus CNVs will not incorporate joint genotyping information" >> ${OUTDIR}/${COHORT_ID}_WARNINGS.txt
