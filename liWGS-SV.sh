@@ -30,7 +30,7 @@ mkdir ${OUTDIR}/data/seqDepth
 mkdir ${OUTDIR}/data/clusters
 mkdir ${OUTDIR}/SV_calls
 mkdir ${OUTDIR}/logs
-cp ${params} ${OUTDIR}/${COHORT_ID}.run_parameters.txt
+cp ${params} ${OUTDIR}/${COHORT_ID}.run_parameters.sh
 
 #Set up working directory tree
 if ! [ -e ${WRKDIR} ]; then

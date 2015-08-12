@@ -1,4 +1,4 @@
-liWGS-SV Documentation
+Holmes (liWGS-SV) Documentation
 Contact: Ryan Collins (rcollins@chgr.mgh.harvard.edu)
 Update: August 2015
 
