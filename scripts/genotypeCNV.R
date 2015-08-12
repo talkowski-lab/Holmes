@@ -358,4 +358,4 @@ results_matrix <- as.data.frame(t(apply(intervals,1,function(row){return(suppres
 colnames(results_matrix) <- c("CNV_ID","chr","start","end",colnames(rawcov[,-c(1:3)]))
 
 #Writes genotypes to file
-write.table(args[3],sep="\t",col.names=T,row.names=F,sep="\t",quote=F)
+write.table(args[3],sep="\t",col.names=T,row.names=F,quote=F)
