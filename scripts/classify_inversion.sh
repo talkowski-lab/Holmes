@@ -12,7 +12,7 @@ if [ $# -eq 8 ]; then
 
   #Read input
   events=$1              #events.bedpe. Preferrably reclassified with reclassify_output.sh
-  clusters=$2            #clusters.bedpe. Must be filtered using cleanClusters_patch.sh
+  clusters=$2            #clusters. Must be filtered using cleanClusters_patch.sh
   complex_size=$3        #minimum size (bp) of breakpoint complexity to report. Should correspond to max clustering size
   deletions=$4           #deletion.events.bedpe run on same cohort.  Sample IDs must match.  Preferrably reclassified with reclassify_output.sh
   insertions=$5          #insertion.events.bedpe run on same cohort.  Sample IDs must match.  Preferrably reclassified with reclassify_output.sh

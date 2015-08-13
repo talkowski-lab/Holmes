@@ -123,7 +123,7 @@ cat ${WRKDIR}/classifier/clusterfix/newCoords/deletion.events.reclassified.bedpe
 awk -v OFS="\t" '{print $1, $2, $6, $0}' ${WRKDIR}/classifier/clusterfix/newCoords/Complex/ALL.CNV.valid.txt > ${WRKDIR}/classifier/clusterfix/newCoords/Complex/ALL.CNV.valid.bed
 
 #Bedtools intersect while removing abparts
-awk -v OFS="\t" '{ print $1, $2, $6, $0 }' ${WRKDIR}/classifier/clusterfix/newCoords/Complex/ALL.CNV.valid.txt | bedtools intersect -wa -wb -a - -b ${abParts} | awk '{ print $10 }' > ${WRKDIR}/classifier/clusterfix/newCoords/Complex/ids.abparts.txt
+cat ${WRKDIR}/classifier/clusterfix/newCoords/Complex/ALL.CNV.valid.bed | bedtools intersect -wa -wb -a - -b ${abParts} | awk '{ print $10 }' > ${WRKDIR}/classifier/clusterfix/newCoords/Complex/ids.abparts.txt
 # bedtools intersect -wa -wb -a ${WRKDIR}/classifier/clusterfix/newCoords/Complex/ALL.CNV.valid.bed -b ${WRKDIR}/classifier/clusterfix/newCoords/Complex/ALL.CNV.valid.bed | fgrep -vwf ${WRKDIR}/classifier/clusterfix/newCoords/Complex/ids.abparts.txt | awk '{ if ($10!=$21 && $6<$16 && $9>$20 && $11==$22) print }'
 
 #Write final output & clean up

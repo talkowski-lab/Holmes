@@ -701,8 +701,8 @@ while read cxID; do
   fi
 done < <( cut -f7 ${preflag} ) >> ${output_dir}/complex_classifications.list
 
+##FUTURE POSSIBLE ADDITIONS:
+# STILL NEED TO COVER MANY COMPLEX CLUSTER SUBGROUPS. THESE COMPRISE MAJORITY OF COMPLEX CLUSTERS, BUT COULD STILL EXTEND SCRIPT FURTHER
+
 #Clean up
 rm -rf ${POOL} ${TMPCLST} ${delcnMOPS_all} ${dupcnMOPS_all} ${samps} ${newpos} ${blatres} ${preflag} ${samps1} ${samps2} ${ORIENTATIONS}
-
-
-
