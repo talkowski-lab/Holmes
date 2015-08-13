@@ -60,7 +60,7 @@ else
 fi
 
 #GROUP A, HIGH - Valid cluster w/ cnMOPS OR genotyping support, <30% blacklist
-bedtools intersect -u -r -f 0.51 -a ${TMPDIR}/${ID}_classifier.${cnvtype}.bed -b <( cat ${cnMOPS_m} ${gcnv} ) | bedtools intersect -v -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupA_wGeno", "HIGH" }' > ${TMPDIR}/${ID}.${cnvtype}.A.bed
+bedtools intersect -u -r -f 0.51 -a ${TMPDIR}/${ID}_classifier.${cnvtype}.bed -b <( cat ${cnMOPS_m} ${gcnv} | cut -f1-5 ) | bedtools intersect -v -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupA_wGeno", "HIGH" }' > ${TMPDIR}/${ID}.${cnvtype}.A.bed
 
 #GROUP B, HIGH - cnMOPS ≥ 50kb, genotyping support, <30% blacklist, no clustering overlap
 bedtools intersect -u -r -f 0.51 -a <( awk -v min=${cnMOPS_cutoff} '{ if ($3-$2>=min) print $0 }' ${cnMOPS_m} ) -b ${gcnv} | bedtools intersect -v -f 0.51 -a - -b ${TMPDIR}/${ID}_classifier.${cnvtype}.bed | bedtools intersect -v -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupB_wGeno", "HIGH" }' > ${TMPDIR}/${ID}.${cnvtype}.B.bed
@@ -69,7 +69,7 @@ bedtools intersect -u -r -f 0.51 -a <( awk -v min=${cnMOPS_cutoff} '{ if ($3-$2>
 bedtools intersect -u -r -f 0.51 -a <( awk -v min=${cnMOPS_cutoff} '{ if ($3-$2<min) print $0 }' ${cnMOPS_m} ) -b ${gcnv} | bedtools intersect -v -f 0.51 -a - -b ${TMPDIR}/${ID}_classifier.${cnvtype}.bed | bedtools intersect -v -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupC_wGeno", "MED" }' > ${TMPDIR}/${ID}.${cnvtype}.C.bed
 
 #GROUP D, MED - Valid cluster w/ cnMOPS OR genotyping support, ≥30% blacklist
-bedtools intersect -u -r -f 0.51 -a ${TMPDIR}/${ID}_classifier.${cnvtype}.bed -b <( cat ${cnMOPS_m} ${gcnv} ) | bedtools intersect -u -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupD_wGeno", "MED" }' > ${TMPDIR}/${ID}.${cnvtype}.D.bed
+bedtools intersect -u -r -f 0.51 -a ${TMPDIR}/${ID}_classifier.${cnvtype}.bed -b <( cat ${cnMOPS_m} ${gcnv} | cut -f1-5 ) | bedtools intersect -u -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupD_wGeno", "MED" }' > ${TMPDIR}/${ID}.${cnvtype}.D.bed
 
 #GROUP E, MED - cnMOPS ≥ 50kb, genotyping support, ≥30% blacklist, no clustering overlap
 bedtools intersect -u -r -f 0.51 -a <( awk -v min=${cnMOPS_cutoff} '{ if ($3-$2>=min) print $0 }' ${cnMOPS_m} ) -b ${gcnv} | bedtools intersect -v -f 0.51 -a - -b ${TMPDIR}/${ID}_classifier.${cnvtype}.bed | bedtools intersect -u -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupE_wGeno", "MED" }' > ${TMPDIR}/${ID}.${cnvtype}.E.bed
@@ -81,7 +81,7 @@ bedtools intersect -v -r -f 0.51 -a <( awk -v min=${cnMOPS_cutoff} '{ if ($3-$2>
 bedtools intersect -u -r -f 0.51 -a <( awk -v min=${cnMOPS_cutoff} '{ if ($3-$2<min) print $0 }' ${cnMOPS_m} ) -b ${gcnv} | bedtools intersect -v -f 0.51 -a - -b ${TMPDIR}/${ID}_classifier.${cnvtype}.bed | bedtools intersect -u -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupG_wGeno", "LOW" }' > ${TMPDIR}/${ID}.${cnvtype}.G.bed
 
 #GROUP H, LOW - Valid cluster, no cnMOPS support, no genotyping support, <25kb
-bedtools intersect -u -r -f 0.51 -a <( awk -v min=${clustering_cutoff} '{ if ($3-$2<min) print $0 }' ${TMPDIR}/${ID}_classifier.${cnvtype}.bed ) -b <( cat ${cnMOPS_m} ${gcnv} ) | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupH_wGeno", "LOW" }' > ${TMPDIR}/${ID}.${cnvtype}.H.bed
+bedtools intersect -v -r -f 0.51 -a <( awk -v min=${clustering_cutoff} '{ if ($3-$2<min) print $0 }' ${TMPDIR}/${ID}_classifier.${cnvtype}.bed ) -b <( cat ${cnMOPS_m} ${gcnv} | cut -f1-5 ) | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupH_wGeno", "LOW" }' > ${TMPDIR}/${ID}.${cnvtype}.H.bed
 
 ##Sort & write out
 cat ${TMPDIR}/${ID}.${cnvtype}.A.bed ${TMPDIR}/${ID}.${cnvtype}.B.bed ${TMPDIR}/${ID}.${cnvtype}.C.bed ${TMPDIR}/${ID}.${cnvtype}.D.bed ${TMPDIR}/${ID}.${cnvtype}.E.bed ${TMPDIR}/${ID}.${cnvtype}.F.bed ${TMPDIR}/${ID}.${cnvtype}.G.bed ${TMPDIR}/${ID}.${cnvtype}.H.bed | sed -e 's/^X/23/g' -e 's/^Y/24/g' | sort -nk1,1 -k2,2n | sed -e 's/^23/X/g' -e 's/^24/Y/g' > ${WRKDIR}/${ID}/${ID}.consensus.${cnvtype}.bed

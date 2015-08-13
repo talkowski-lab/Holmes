@@ -76,7 +76,7 @@ if [ $( cat ${samples_list} | wc - ) -ge ${min_geno} ]; then
 
   #Split genotype beds per sample
   while read ID bam sex; do
-    idx=$( head -n1 ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.genotypes.bed | sed 's/\t/\n/g' | awk -v OFS="\t" '{ print NF, $1 }' | fgrep -w ${ID} | cut -f1 )
+    idx=$( head -n1 ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.genotypes.bed | sed 's/\t/\n/g' | awk -v OFS="\t" '{ print NR, $1 }' | fgrep -w ${ID} | cut -f1 )
     awk -v idx=${idx} -v OFS="\t" '{ print $2, $3, $4, $(idx), $1 }' ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.genotypes.bed > ${WRKDIR}/${ID}/${ID}.merged_del.genotypes.bed
     awk -v idx=${idx} -v OFS="\t" '{ print $2, $3, $4, $(idx), $1 }' ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_intervals.merged.genotypes.bed > ${WRKDIR}/${ID}/${ID}.merged_dup.genotypes.bed
   done < ${samples_list}
