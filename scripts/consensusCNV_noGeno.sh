@@ -48,19 +48,19 @@ esac
 cat <( cut --complement -f6 ${cnMOPS} ) <( awk -v OFS="\t" '{ print $1, $2, $3, "DNAcopy_"$5, $6, "DNAcopy" }' ${DNAcopy} ) <( awk -v OFS="\t" '{ print $0, "GAP_EXTENSION", "GAP_EXTENSION" }' /data/talkowski/rlc47/src/GRCh37_assemblyGaps.bed ) | sed -e 's/^X/23/g' -e 's/^Y/24/g' | sort -nk1,1 -k2,2n | bedtools merge -c 4,5,6 -o collapse -i - | sed -e 's/^23/X/g' -e 's/^24/Y/g'  | awk -v OFS="\t" -v ID=${ID} '$4 ~ /sampleName|DNAcopy/ { print $1, $2, $3+1, $4, $5, $6 }' > ${cnMOPS_m}
 
 #GROUP A, HIGH - Valid cluster w/ cnMOPS support, <30% blacklist
-bedtools intersect -u -r -f 0.51 -a ${TMPDIR}/${ID}_classifier.${cnvtype}.bed -b ${cnMOPS_m} | bedtools intersect -v -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupA_NoGeno", "HIGH" }' > ${TMPDIR}/${ID}.${cnvtype}.A.bed
+bedtools intersect -u -r -f 0.51 -a ${TMPDIR}/${ID}_classifier.${cnvtype}.bed -b ${cnMOPS_m} | bedtools intersect -v -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupA_noGeno", "HIGH" }' > ${TMPDIR}/${ID}.${cnvtype}.A.bed
 
 #GROUP B, MEDIUM - cnMOPS calls larger than max size required for clustering overlap, <30% blacklist, no clustering overlap
-bedtools intersect -v -r -f 0.51 -a <( awk -v min=${cnMOPS_cutoff} -v OFS="\t" '{ if ($3-$2>=min) print $1, $2, $3, $6, "GroupB_NoGeno", "MED" }' ${cnMOPS_m} ) -b ${TMPDIR}/${ID}_classifier.${cnvtype}.bed | bedtools intersect -v -f 0.3 -a - -b ${BL} > ${TMPDIR}/${ID}.${cnvtype}.B.bed
+bedtools intersect -v -r -f 0.51 -a <( awk -v min=${cnMOPS_cutoff} -v OFS="\t" '{ if ($3-$2>=min) print $1, $2, $3, $6, "GroupB_noGeno", "MED" }' ${cnMOPS_m} ) -b ${TMPDIR}/${ID}_classifier.${cnvtype}.bed | bedtools intersect -v -f 0.3 -a - -b ${BL} > ${TMPDIR}/${ID}.${cnvtype}.B.bed
 
 #GROUP C, MEDIUM - Valid cluster w/ cnMOPS support, ≥30% blacklist
-bedtools intersect -u -r -f 0.51 -a ${TMPDIR}/${ID}_classifier.${cnvtype}.bed -b ${cnMOPS_m} | bedtools intersect -u -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupC_NoGeno", "MED" }' > ${TMPDIR}/${ID}.${cnvtype}.C.bed
+bedtools intersect -u -r -f 0.51 -a ${TMPDIR}/${ID}_classifier.${cnvtype}.bed -b ${cnMOPS_m} | bedtools intersect -u -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupC_noGeno", "MED" }' > ${TMPDIR}/${ID}.${cnvtype}.C.bed
 
 #GROUP D, LOW - cnMOPS calls larger than max size required for clustering overlap, ≥30% blacklist, no clustering overlap
-bedtools intersect -v -r -f 0.51 -a <( awk -v min=${cnMOPS_cutoff} -v OFS="\t" '{ if ($3-$2>=min) print $1, $2, $3, $6, "GroupD_NoGeno", "LOW" }' ${cnMOPS_m} ) -b ${TMPDIR}/${ID}_classifier.${cnvtype}.bed | bedtools intersect -u -f 0.3 -a - -b ${BL} > ${TMPDIR}/${ID}.${cnvtype}.D.bed
+bedtools intersect -v -r -f 0.51 -a <( awk -v min=${cnMOPS_cutoff} -v OFS="\t" '{ if ($3-$2>=min) print $1, $2, $3, $6, "GroupD_noGeno", "LOW" }' ${cnMOPS_m} ) -b ${TMPDIR}/${ID}_classifier.${cnvtype}.bed | bedtools intersect -u -f 0.3 -a - -b ${BL} > ${TMPDIR}/${ID}.${cnvtype}.D.bed
 
 #GROUP E, LOW - Valid cluster w/ no cnMOPS support
-bedtools intersect -v -r -f 0.51 -a ${TMPDIR}/${ID}_classifier.${cnvtype}.bed -b ${cnMOPS_m} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupE_NoGeno", "LOW" }' > ${TMPDIR}/${ID}.${cnvtype}.E.bed
+bedtools intersect -v -r -f 0.51 -a ${TMPDIR}/${ID}_classifier.${cnvtype}.bed -b ${cnMOPS_m} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupE_noGeno", "LOW" }' > ${TMPDIR}/${ID}.${cnvtype}.E.bed
 
 ##Sort & write out
 cat ${TMPDIR}/${ID}.${cnvtype}.A.bed ${TMPDIR}/${ID}.${cnvtype}.B.bed ${TMPDIR}/${ID}.${cnvtype}.C.bed ${TMPDIR}/${ID}.${cnvtype}.D.bed ${TMPDIR}/${ID}.${cnvtype}.E.bed | sed -e 's/^X/23/g' -e 's/^Y/24/g' | sort -nk1,1 -k2,2n | sed -e 's/^23/X/g' -e 's/^24/Y/g' > ${WRKDIR}/${ID}/${ID}.consensus.${cnvtype}.bed
