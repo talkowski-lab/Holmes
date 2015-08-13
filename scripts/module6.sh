@@ -48,14 +48,11 @@ if [ $( cat ${samples_list} | wc - ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE}
 
   #Set rare edge cases where overclustering caused negative size to largest insert in cohort
   scaler=$( fgrep -v "#" ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics | cut -f9 | sort -nrk1,1 | head -n1 )
-  awk -v scaler=${scaler} -v OFS="\t" '{ if ($3-$2>0) print $0; else print $1, (($3+$2)/2)-(scaler/2), (($3+$2)/2)+(scaler/2), $4, $5, $6, $7, $8, $9 }' ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.bed > ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.bed2
-  mv ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.bed2 ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.bed
-  awk -v scaler=${scaler} -v OFS="\t" '{ if ($3-$2>0) print $0; else print $1, (($3+$2)/2)-(scaler/2), (($3+$2)/2)+(scaler/2), $4, $5, $6, $7, $8, $9 }' ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_intervals.merged.bed > ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_intervals.merged.bed2
-  mv ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_intervals.merged.bed2 ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_intervals.merged.bed
+  awk -v scaler=${scaler} -v OFS="\t" '{ if ($3-$2>0) print $0; else print $1, (($3+$2)/2)-(scaler/2), (($3+$2)/2)+(scaler/2), $4, $5, $6, $7, $8, $9 }' ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed > ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed2
+  mv ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed2 ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed
 
   #Genotype all consensus intervals
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV_batch.R ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.genotypes.bed"
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV_batch.R ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_intervals.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_intervals.merged.genotypes.bed"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV_batch.R ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.genotypes.bed"
 
   #Gate until complete; 20 sec check; 5 min report
   GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_genotyping" | wc -l )
@@ -72,15 +69,14 @@ if [ $( cat ${samples_list} | wc - ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE}
 
   #Split genotype beds per sample
   while read ID bam sex; do
-    idx=$( head -n1 ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.genotypes.bed | sed 's/\t/\n/g' | awk -v OFS="\t" '{ print NR, $1 }' | fgrep -w ${ID} | cut -f1 )
-    awk -v idx=${idx} -v OFS="\t" '{ print $2, $3, $4, $(idx), $1 }' ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.genotypes.bed > ${WRKDIR}/${ID}/${ID}.merged_del.genotypes.bed
-    awk -v idx=${idx} -v OFS="\t" '{ print $2, $3, $4, $(idx), $1 }' ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_intervals.merged.genotypes.bed > ${WRKDIR}/${ID}/${ID}.merged_dup.genotypes.bed
+    idx=$( head -n1 ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.genotypes.bed | sed 's/\t/\n/g' | awk -v OFS="\t" '{ print NR, $1 }' | fgrep -w ${ID} | cut -f1 )
+    awk -v idx=${idx} -v OFS="\t" '{ print $2, $3, $4, $(idx), $1 }' ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.genotypes.bed > ${WRKDIR}/${ID}/${ID}.merged_CNV.genotypes.bed
   done < ${samples_list}
 
   #Generate consensus CNVs per sample
   while read ID bam sex; do
-    ${liWGS_SV}/scripts/consensusCNV_wGeno.sh ${WRKDIR}/classifier/clusterfix/newCoords/deletion.events.reclassified.bedpe ${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed ${WRKDIR}/${ID}/DNAcopy.dels.bed ${WRKDIR}/${ID}/${ID}.merged_del.genotypes.bed ${ID} del ${params}
-    ${liWGS_SV}/scripts/consensusCNV_wGeno.sh ${WRKDIR}/classifier/clusterfix/newCoords/insertion.events.reclassified.bedpe ${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed ${WRKDIR}/${ID}/DNAcopy.dups.bed ${WRKDIR}/${ID}/${ID}.merged_dup.genotypes.bed ${ID} dup ${params}
+    ${liWGS_SV}/scripts/consensusCNV_wGeno.sh ${WRKDIR}/classifier/clusterfix/newCoords/deletion.events.reclassified.bedpe ${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed ${WRKDIR}/${ID}/DNAcopy.dels.bed ${WRKDIR}/${ID}/${ID}.merged_CNV.genotypes.bed ${ID} del ${params}
+    ${liWGS_SV}/scripts/consensusCNV_wGeno.sh ${WRKDIR}/classifier/clusterfix/newCoords/insertion.events.reclassified.bedpe ${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed ${WRKDIR}/${ID}/DNAcopy.dups.bed ${WRKDIR}/${ID}/${ID}.merged_CNV.genotypes.bed ${ID} dup ${params}
   done < ${samples_list}
 else
   echo "WARNING [MODULE 6]: Cohort has fewer than ${min_geno} samples; consensus CNVs will not incorporate joint genotyping information" >> ${OUTDIR}/${COHORT_ID}_WARNINGS.txt
@@ -105,21 +101,22 @@ done < ${samples_list}
 ${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensus_del_to_merge.list 10000 ${COHORT_ID}_consensus_dels ${WRKDIR}/consensusCNV/
 ${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensus_dup_to_merge.list 10000 ${COHORT_ID}_consensus_dups ${WRKDIR}/consensusCNV/
 
-#Genotype merged consensus CNVs
-if [ $( cat ${samples_list} | wc - ) -ge ${min_geno} ]; then
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/consensus_genotyping.log -e ${OUTDIR}/logs/consensus_genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV_batch.R ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_dels.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_del_consensus.merged.genotypes.bed"
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/consensus_genotyping.log -e ${OUTDIR}/logs/consensus_genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV_batch.R ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_dups.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_consensus.merged.genotypes.bed"
-done < ${samples_list}
+##Next step excluded until genotyping script becomes more reliable; will be a good idea to genotype these sites in everyone eventually but genotyping script not accurate enough yet
+# #Genotype merged consensus CNVs
+# if [ $( cat ${samples_list} | wc - ) -ge ${min_geno} ]; then
+#   bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/consensus_genotyping.log -e ${OUTDIR}/logs/consensus_genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV_batch.R ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_dels.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_del_consensus.merged.genotypes.bed"
+#   bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/consensus_genotyping.log -e ${OUTDIR}/logs/consensus_genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV_batch.R ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_dups.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_consensus.merged.genotypes.bed"
+# done < ${samples_list}
 
-#Gate until complete; 20 sec check; 5 min report
-GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_genotyping" | wc -l )
-GATEwait=0
-until [[ $GATEcount == 0 ]]; do
-  sleep 20s
-  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_genotyping" | wc -l )
-  GATEwait=$[${GATEwait} +1]
-  if [[ $GATEwait == 15 ]]; then
-    echo -e "STATUS [$(date)]: Waiting on ${GATEcount} jobs..."
-    GATEwait=0
-  fi
-done
+# #Gate until complete; 20 sec check; 5 min report
+# GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_genotyping" | wc -l )
+# GATEwait=0
+# until [[ $GATEcount == 0 ]]; do
+#   sleep 20s
+#   GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_genotyping" | wc -l )
+#   GATEwait=$[${GATEwait} +1]
+#   if [[ $GATEwait == 15 ]]; then
+#     echo -e "STATUS [$(date)]: Waiting on ${GATEcount} jobs..."
+#     GATEwait=0
+#   fi
+# done

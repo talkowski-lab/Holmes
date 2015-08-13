@@ -19,7 +19,7 @@
 #Input
 events=$1               #full path to classifier output (events.bedpe format required)
 cnMOPS=$2               #full path to cnMOPS file (bed format required)
-DNAcopy=$3              #full path to DNAcopy file (bed format required)
+DNAcopy_raw=$3          #full path to DNAcopy file (bed format required)
 genotypes=$4            #full path to sample genotype bed (cols 1-3 bed, col 4 = predicted genotype, col 5 = interval ID)
 ID=$5                   #sample ID.  Must match sample ID used in classifier and cnMOPS input files
 cnvtype=$6              #del or dup
@@ -33,6 +33,7 @@ TMPDIR=/scratch/miket/rlc47temp/tmp.files
 module load bedtools/2.22.1
 BL=`mktemp`
 gcnv=`mktemp`
+DNAcopy=`mktemp`
 fgrep -v GL ${CNV_BLACKLIST} > ${BL}
 cnMOPS_m=`mktemp`
 cnMOPS_cutoff=50000 #size below which cnMOPS calls without clustering support become low-qual
@@ -49,15 +50,23 @@ case ${cnvtype} in
     ;;
 esac
 
-#Merges cnMOPS calls & DNAcopy calls, spans across assembly gaps
-cat <( cut --complement -f6 ${cnMOPS} ) <( awk -v OFS="\t" '{ print $1, $2, $3, "DNAcopy_"$5, $6, "DNAcopy" }' ${DNAcopy} ) <( awk -v OFS="\t" '{ print $0, "GAP_EXTENSION", "GAP_EXTENSION" }' /data/talkowski/rlc47/src/GRCh37_assemblyGaps.bed ) | sed -e 's/^X/23/g' -e 's/^Y/24/g' | sort -nk1,1 -k2,2n | bedtools merge -c 4,5,6 -o collapse -i - | sed -e 's/^23/X/g' -e 's/^24/Y/g'  | awk -v OFS="\t" -v ID=${ID} '$4 ~ /sampleName|DNAcopy/ { print $1, $2, $3+1, $4, $5, $6 }' > ${cnMOPS_m}
-
 #Gets intervals predicted to be CN-variable in right direction by genotyping
 if [ ${cnvtype}=="del" ]; then
   awk -v OFS="\t" '{ if ($4<2) print $0 }' ${genotypes} > ${gcnv}
 else
   awk -v OFS="\t" '{ if ($4>2) print $0 }' ${genotypes} > ${gcnv}
 fi
+
+#Removes genotyped intervals with >30% coverage by N-masked reference regions, also excludes X & Y
+bedtools coverage -a ${NMASK} -b ${gcnv} | awk -v OFS="\t" '{ if ($NF<0.3 && $1!="X" && $1!="Y") print $1, $2, $3, $4, $5 }' > ${gcnv}2
+mv ${gcnv}2 ${gcnv}
+
+#Removes DNAcopy intervals with >30% coverage by N-masked reference regions, also excludes X & Y
+bedtools coverage -a ${NMASK} -b ${DNAcopy_raw} | awk -v OFS="\t" '{ if ($NF<0.3 && $1!="X" && $1!="Y") print $1, $2, $3, $4, $5, $6 }' > ${DNAcopy}2
+mv ${DNAcopy}2 ${DNAcopy}
+
+#Merges cnMOPS calls & DNAcopy calls, spans across assembly gaps
+cat <( cut --complement -f6 ${cnMOPS} ) <( awk -v OFS="\t" '{ print $1, $2, $3, "DNAcopy_"$5, $6, "DNAcopy" }' ${DNAcopy} ) <( awk -v OFS="\t" '{ print $0, "GAP_EXTENSION", "GAP_EXTENSION" }' /data/talkowski/rlc47/src/GRCh37_assemblyGaps.bed ) | sed -e 's/^X/23/g' -e 's/^Y/24/g' | sort -nk1,1 -k2,2n | bedtools merge -c 4,5,6 -o collapse -i - | sed -e 's/^23/X/g' -e 's/^24/Y/g'  | awk -v OFS="\t" -v ID=${ID} '$4 ~ /sampleName|DNAcopy/ { print $1, $2, $3+1, $4, $5, $6 }' > ${cnMOPS_m}
 
 #GROUP A, HIGH - Valid cluster w/ cnMOPS OR genotyping support, <30% blacklist
 bedtools intersect -u -r -f 0.51 -a ${TMPDIR}/${ID}_classifier.${cnvtype}.bed -b <( cat ${cnMOPS_m} ${gcnv} | cut -f1-5 ) | bedtools intersect -v -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupA_wGeno", "HIGH" }' > ${TMPDIR}/${ID}.${cnvtype}.A.bed
