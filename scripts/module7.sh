@@ -29,3 +29,18 @@ bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/inversion_categorization.log -e $
 #Submit translocation categorization
 bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/transloc_categorization.log -e ${OUTDIR}/logs/transloc_categorization.log -J ${COHORT_ID}_classification "${liWGS_SV}/scripts/classify_translocation.sh ${WRKDIR}/classifier/clusterfix/newCoords/transloc.events.reclassified.bedpe ${WRKDIR}/classifier/clusterfix/${COHORT_ID}_transloc.patched.clusters ${WRKDIR}/classifier/clusterfix/newCoords/"
 
+#Gate until complex linking complete; 20 sec check; 5 min report
+GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_cxLINK" | wc -l )
+GATEwait=0
+until [[ $GATEcount == 0 ]]; do
+  sleep 20s
+  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_cxLINK" | wc -l )
+  GATEwait=$[${GATEwait} +1]
+  if [[ $GATEwait == 15 ]]; then
+    echo -e "STATUS [$(date)]: Waiting on complex linking script..."
+    GATEwait=0
+  fi
+done
+
+#Parse complex linked output
+#****NEED TO ADD THIS*****
