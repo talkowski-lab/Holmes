@@ -14,6 +14,7 @@ export other_assign=MALE #sex group to assign "other" sex for depth-based callin
 export uscore_skip=1 #underscore skip; determines how many underscores in clustering read ID are assumed to be a part of sample ID; e.g. format like "STUDY_SAMPLE" should have uscore_skip=1, etc
 export KEEP_TMP=TRUE #Boolean (all caps) to indicate whether working directory should be kept once pipeline is complete. Individual modules may be rerun with identical parameters file if working directory is saved.
 export pre_bamstat=FALSE #boolean (all caps) to indicate if bamstat on all samples has already been run. If set as TRUE, bamstat_paths MUST BE CORRECTLY SPECIFIED otherwise the whole pipeline will fail
+export GENOTYPE_OVERRIDE=FALSE #boolean (all caps) to indicate if you want to manually disable CNV genotyping. Any value other than "TRUE" will revert to default operation (genotyping used if cohort size >= ${min_geno}, set in mod. 6)
 
 #Full paths for reference files & executables 
 export liWGS_SV=/data/talkowski/rlc47/code/liWGS-SV #path to liWGS-SV git repo

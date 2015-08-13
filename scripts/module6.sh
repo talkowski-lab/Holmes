@@ -17,25 +17,21 @@ min_geno=20 #minimum cohort size for incorporating CNV genotype information into
 #Create working directory for consensus CNVs
 mkdir ${WRKDIR}/consensusCNV
 
-#Genotype all CNV intervals if cohort has ≥ ${min_geno} samples
-if [ $( cat ${samples_list} | wc - ) -ge ${min_geno} ]; then
+#Genotype all CNV intervals if cohort has ≥ ${min_geno} samples, or if ${GENOTYPE_OVERRIDE}!="TRUE"
+if [ $( cat ${samples_list} | wc - ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE} != "TRUE" ]; then
   #Create master file of all CNV intervals
-  if [ -e ${WRKDIR}/consensusCNV/dels_to_merge.list ]; then
-    rm ${WRKDIR}/consensusCNV/dels_to_merge.list
-  fi
-  if [ -e ${WRKDIR}/consensusCNV/dups_to_merge.list ]; then
-    rm ${WRKDIR}/consensusCNV/dups_to_merge.list
+  if [ -e ${WRKDIR}/consensusCNV/CNVs_to_merge.list ]; then
+    rm ${WRKDIR}/consensusCNV/CNVs_to_merge.list
   fi
   while read ID bam sex; do
     fgrep Valid ${WRKDIR}/classifier/clusterfix/newCoords/deletion.events.reclassified.bedpe | fgrep -w ${ID} | awk -v ID=${ID} -v OFS="\t" '{ print $1, $3, $5, ID, $7 }' > ${WRKDIR}/${ID}/classifier.dels.bed
     fgrep Valid ${WRKDIR}/classifier/clusterfix/newCoords/insertion.events.reclassified.bedpe | fgrep -w ${ID} | awk -v ID=${ID} -v OFS="\t" '{ print $1, $3, $5, ID, $7 }' > ${WRKDIR}/${ID}/classifier.dups.bed
     fgrep del ${WRKDIR}/${ID}/DNAcopy/${ID}.events.tsv | awk -v ID=${ID} -v OFS="\t" '{ if ($3-$2>=10000000 && $1!="X" && $1!="Y") print $1, $2, $3, ID, $4, $7 }' > ${WRKDIR}/${ID}/DNAcopy.dels.bed
     fgrep dup ${WRKDIR}/${ID}/DNAcopy/${ID}.events.tsv | awk -v ID=${ID} -v OFS="\t" '{ if ($3-$2>=10000000 && $1!="X" && $1!="Y") print $1, $2, $3, ID, $4, $7 }' > ${WRKDIR}/${ID}/DNAcopy.dups.bed
-    echo -e "${ID}_classifier\t${WRKDIR}/${ID}/classifier.dels.bed\n${ID}_cnMOPS\t${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed\n${ID}_DNAcopy\t${WRKDIR}/${ID}/DNAcopy.dels.bed" >> ${WRKDIR}/consensusCNV/dels_to_merge.list
-    echo -e "${ID}_classifier\t${WRKDIR}/${ID}/classifier.dups.bed\n${ID}_cnMOPS\t${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed\n${ID}_DNAcopy\t${WRKDIR}/${ID}/DNAcopy.dups.bed" >> ${WRKDIR}/consensusCNV/dups_to_merge.list
+    echo -e "${ID}_classifier\t${WRKDIR}/${ID}/classifier.dels.bed\n${ID}_cnMOPS\t${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed\n${ID}_DNAcopy\t${WRKDIR}/${ID}/DNAcopy.dels.bed" >> ${WRKDIR}/consensusCNV/CNVs_to_merge.list
+    echo -e "${ID}_classifier\t${WRKDIR}/${ID}/classifier.dups.bed\n${ID}_cnMOPS\t${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed\n${ID}_DNAcopy\t${WRKDIR}/${ID}/DNAcopy.dups.bed" >> ${WRKDIR}/consensusCNV/CNVs_to_merge.list
   done < ${samples_list}
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/mergeCNVinterval.log -e ${OUTDIR}/logs/mergeCNVinterval.log -J ${COHORT_ID}_MERGE "${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensusCNV/dels_to_merge.list 10000 ${COHORT_ID}_del_intervals ${WRKDIR}/consensusCNV/"
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/mergeCNVinterval.log -e ${OUTDIR}/logs/mergeCNVinterval.log -J ${COHORT_ID}_MERGE "${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensusCNV/dups_to_merge.list 10000 ${COHORT_ID}_dup_intervals ${WRKDIR}/consensusCNV/"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/mergeCNVinterval.log -e ${OUTDIR}/logs/mergeCNVinterval.log -J ${COHORT_ID}_MERGE "${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensusCNV/CNVs_to_merge.list 10000 ${COHORT_ID}_CNV_intervals ${WRKDIR}/consensusCNV/"
 
   #Gate until complete; 20 sec check; 5 min report
   GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MERGE" | wc -l )

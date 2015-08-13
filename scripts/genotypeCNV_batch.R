@@ -360,7 +360,9 @@ results_matrix <- as.data.frame(t(apply(intervals,1,function(row){return(suppres
                                                                                                       start=as.numeric(as.character(row[2])),
                                                                                                       end=as.numeric(as.character(row[3])),
                                                                                                       ID=row[4])))})))
+
 colnames(results_matrix) <- c("CNV_ID","chr","start","end",colnames(rawcov[,-c(1:3)]))
+results_matrix[,-c(1:3)] <- t(apply(results_matrix[,-c(1:3)],1,function(vals){vals <- as.numeric(as.character(vals)); return(vals-median(vals)+2)}))
 
 #Writes genotypes to file
 write.table(results_matrix,args[3],sep="\t",col.names=T,row.names=F,quote=F)
