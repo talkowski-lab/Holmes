@@ -15,9 +15,15 @@ params=$2
 minCXsize=$( fgrep -v "#" ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics | cut -f9 | sort -nrk1,1 | head -n1 )
 
 #Make cnMOPS list
+if [ -e ${WRKDIR}/classifier/clusterfix/newCoords/cnMOPS_dels.list ]; then
+  rm ${WRKDIR}/classifier/clusterfix/newCoords/cnMOPS_dels.list
+fi
+if [ -e ${WRKDIR}/classifier/clusterfix/newCoords/cnMOPS_dups.list ]; then
+  rm ${WRKDIR}/classifier/clusterfix/newCoords/cnMOPS_dups.list
+fi
 while read ID bam sex; do
-	echo -e "${ID}\t${WRKDIR}\t${ID}\t${ID}.cnMOPS.dels.bed" > ${WRKDIR}/classifier/clusterfix/newCoords/cnMOPS_dels.list
-	echo -e "${ID}\t${WRKDIR}\t${ID}\t${ID}.cnMOPS.dups.bed" > ${WRKDIR}/classifier/clusterfix/newCoords/cnMOPS_dups.list
+	echo -e "${ID}\t${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed" >> ${WRKDIR}/classifier/clusterfix/newCoords/cnMOPS_dels.list
+	echo -e "${ID}\t${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed" >> ${WRKDIR}/classifier/clusterfix/newCoords/cnMOPS_dups.list
 done < ${samples_list}
 
 #Submit complex linking script
@@ -42,5 +48,24 @@ until [[ $GATEcount == 0 ]]; do
   fi
 done
 
+#Determine clustering distance
+while read ID bam sex; do
+  basename ${WRKDIR}/${ID}/bamstat/deletion_clusters*txt | cut -f3 -d_ | tr -d "d"
+done < ${samples_list} | sort -nk1,1 > ${WRKDIR}/clustering_distances.list
+clustdist=$( tail -n1 ${WRKDIR}/clustering_distances.list )
+
 #Parse complex linked output
-#****NEED TO ADD THIS*****
+if [ -e ${WRKDIR}/events.list ]; then
+  rm ${WRKDIR}/events.list
+fi
+if [ -e ${WRKDIR}/clusters.list ]; then
+  rm ${WRKDIR}/clusters.list
+fi
+for type in deletion insertion inversion transloc; do
+  echo -e "${type}\t${WRKDIR}/classifier/clusterfix/newCoords/${type}.events.reclassified.bedpe" >> ${WRKDIR}/events.list
+  echo -e "${type}\t${WRKDIR}/classifier/clusterfix/${COHORT_ID}_${type}.patched.clusters" >> ${WRKDIR}/clusters.list
+done
+${liWGS_SV}/scripts/parseComplex.sh ${WRKDIR}/classifier/clusterfix/newCoords/${COHORT_ID}.putative_complex_sites.list ${WRKDIR}/events.list ${WRKDIR}/clusters.list ${WRKDIR}/classifier/clusterfix/newCoords/cnMOPS_dels.list ${WRKDIR}/classifier/clusterfix/newCoords/cnMOPS_dups.list ${WRKDIR}/classifier/clusterfix/newCoords/ ${clustdist} $( cat ${samples_list} | wc -l ) ${params}
+
+
+
