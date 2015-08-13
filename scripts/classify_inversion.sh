@@ -283,7 +283,7 @@ if [ $# -eq 8 ]; then
           else
             echo -e "${eID}\t${chr}\t${pmin}\t${pmax}\t${mmin}\t${mmax}\tDUP5\t${isize}\t${osize}\t${call}\t0\t0\t${nDup}\t${predGain}" >> ${OUTDIR}/inversion.classifications.list
           fi
-        #if excision match and no dup match, 3' EXCISION-INS
+        #if excision match and no dup match, 5' EXCISION-INS
         elif [ ${nDup} -eq 0 ] && [ ${excision} -gt 0 ]; then
           isize=$( echo "${pmax}-${mmax}" | bc )
           osize=$( echo "${mmin}-${pmin}" | bc )
@@ -298,7 +298,7 @@ if [ $# -eq 8 ]; then
           else
             echo -e "${eID}\t${chr}\t${pmin}\t${pmax}\t${mmin}\t${mmax}\tEXINS5\t${isize}\t${osize}\t${call}\t0\t0\t0\t0" >> ${OUTDIR}/inversion.classifications.list
           fi
-        # no excision match nor dup match, then assume 3' INS with unknown origin, could be duped or excised
+        # no excision match nor dup match, then assume 5' INS with unknown origin, could be duped or excised
         else
           isize=$( echo "${pmax}-${mmax}" | bc )
           osize=$( echo "${mmin}-${pmin}" | bc )

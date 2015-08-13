@@ -30,8 +30,8 @@ if [ $( cat ${samples_list} | wc -l ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE
     fgrep Valid ${WRKDIR}/classifier/clusterfix/newCoords/insertion.events.reclassified.bedpe | fgrep -w ${ID} | awk -v ID=${ID} -v OFS="\t" '{ print $1, $3, $5, ID, $7 }' > ${WRKDIR}/${ID}/classifier.dups.bed
     fgrep del ${WRKDIR}/${ID}/DNAcopy/${ID}.events.tsv | awk -v ID=${ID} -v OFS="\t" '{ if ($3-$2>=10000000 && $1!="X" && $1!="Y") print $1, $2, $3, ID, $4, $7 }' > ${WRKDIR}/${ID}/DNAcopy.dels.bed
     fgrep dup ${WRKDIR}/${ID}/DNAcopy/${ID}.events.tsv | awk -v ID=${ID} -v OFS="\t" '{ if ($3-$2>=10000000 && $1!="X" && $1!="Y") print $1, $2, $3, ID, $4, $7 }' > ${WRKDIR}/${ID}/DNAcopy.dups.bed
-    echo -e "${ID}_classifier\t${WRKDIR}/${ID}/classifier.dels.bed\n${ID}_cnMOPS\t${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed\n${ID}_DNAcopy\t${WRKDIR}/${ID}/DNAcopy.dels.bed" >> ${WRKDIR}/consensusCNV/CNVs_to_merge.list
-    echo -e "${ID}_classifier\t${WRKDIR}/${ID}/classifier.dups.bed\n${ID}_cnMOPS\t${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed\n${ID}_DNAcopy\t${WRKDIR}/${ID}/DNAcopy.dups.bed" >> ${WRKDIR}/consensusCNV/CNVs_to_merge.list
+    echo -e "${ID}_classifier_del\t${WRKDIR}/${ID}/classifier.dels.bed\n${ID}_cnMOPS_del\t${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed\n${ID}_DNAcopy_del\t${WRKDIR}/${ID}/DNAcopy.dels.bed" >> ${WRKDIR}/consensusCNV/CNVs_to_merge.list
+    echo -e "${ID}_classifier_dup\t${WRKDIR}/${ID}/classifier.dups.bed\n${ID}_cnMOPS_dup\t${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed\n${ID}_DNAcopy_dup\t${WRKDIR}/${ID}/DNAcopy.dups.bed" >> ${WRKDIR}/consensusCNV/CNVs_to_merge.list
   done < ${samples_list}
   bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/mergeCNVinterval.log -e ${OUTDIR}/logs/mergeCNVinterval.log -J ${COHORT_ID}_MERGE "${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensusCNV/CNVs_to_merge.list 10000 ${COHORT_ID}_CNV_intervals ${WRKDIR}/consensusCNV/"
 
