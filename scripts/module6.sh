@@ -15,7 +15,9 @@ params=$2
 min_geno=20 #minimum cohort size for incorporating CNV genotype information into consensus script
 
 #Create working directory for consensus CNVs
-mkdir ${WRKDIR}/consensusCNV
+if ! [ -e ${WRKDIR}/consensusCNV ]; then
+  mkdir ${WRKDIR}/consensusCNV
+fi
 
 #Genotype all CNV intervals if cohort has ≥ ${min_geno} samples, or if ${GENOTYPE_OVERRIDE}!="TRUE"
 if [ $( cat ${samples_list} | wc -l ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE} != "TRUE" ]; then
@@ -70,7 +72,7 @@ if [ $( cat ${samples_list} | wc -l ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE
   #Split genotype beds per sample
   while read ID bam sex; do
     idx=$( head -n1 ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.genotypes.bed | sed 's/\t/\n/g' | awk -v OFS="\t" '{ print NR, $1 }' | fgrep -w ${ID} | cut -f1 )
-    awk -v idx=${idx} -v OFS="\t" '{ print $2, $3, $4, $(idx), $1 }' ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.genotypes.bed > ${WRKDIR}/${ID}/${ID}.merged_CNV.genotypes.bed
+    awk -v idx=${idx} -v OFS="\t" '{ print $2, $3, $4, $(idx), $1 }' ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.genotypes.bed > ${WRKDIR}/${ID}/${ID}.merged_CNV.genotypes.bed
   done < ${samples_list}
 
   #Generate consensus CNVs per sample

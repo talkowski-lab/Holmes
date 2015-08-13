@@ -62,8 +62,7 @@ bedtools coverage -a ${NMASK} -b ${gcnv} | awk -v OFS="\t" '{ if ($NF<0.3 && $1!
 mv ${gcnv}2 ${gcnv}
 
 #Removes DNAcopy intervals with >30% coverage by N-masked reference regions, also excludes X & Y
-bedtools coverage -a ${NMASK} -b ${DNAcopy_raw} | awk -v OFS="\t" '{ if ($NF<0.3 && $1!="X" && $1!="Y") print $1, $2, $3, $4, $5, $6 }' > ${DNAcopy}2
-mv ${DNAcopy}2 ${DNAcopy}
+bedtools coverage -a ${NMASK} -b ${DNAcopy_raw} | awk -v OFS="\t" '{ if ($NF<0.3 && $1!="X" && $1!="Y") print $1, $2, $3, $4, $5, $6 }' > ${DNAcopy}
 
 #Merges cnMOPS calls & DNAcopy calls, spans across assembly gaps
 cat <( cut --complement -f6 ${cnMOPS} ) <( awk -v OFS="\t" '{ print $1, $2, $3, "DNAcopy_"$5, $6, "DNAcopy" }' ${DNAcopy} ) <( awk -v OFS="\t" '{ print $0, "GAP_EXTENSION", "GAP_EXTENSION" }' /data/talkowski/rlc47/src/GRCh37_assemblyGaps.bed ) | sed -e 's/^X/23/g' -e 's/^Y/24/g' | sort -nk1,1 -k2,2n | bedtools merge -c 4,5,6 -o collapse -i - | sed -e 's/^23/X/g' -e 's/^24/Y/g'  | awk -v OFS="\t" -v ID=${ID} '$4 ~ /sampleName|DNAcopy/ { print $1, $2, $3+1, $4, $5, $6 }' > ${cnMOPS_m}
@@ -96,4 +95,4 @@ bedtools intersect -v -r -f 0.51 -a <( awk -v min=${clustering_cutoff} '{ if ($3
 cat ${TMPDIR}/${ID}.${cnvtype}.A.bed ${TMPDIR}/${ID}.${cnvtype}.B.bed ${TMPDIR}/${ID}.${cnvtype}.C.bed ${TMPDIR}/${ID}.${cnvtype}.D.bed ${TMPDIR}/${ID}.${cnvtype}.E.bed ${TMPDIR}/${ID}.${cnvtype}.F.bed ${TMPDIR}/${ID}.${cnvtype}.G.bed ${TMPDIR}/${ID}.${cnvtype}.H.bed | sed -e 's/^X/23/g' -e 's/^Y/24/g' | sort -nk1,1 -k2,2n | sed -e 's/^23/X/g' -e 's/^24/Y/g' > ${WRKDIR}/${ID}/${ID}.consensus.${cnvtype}.bed
 
 ##CLEAN UP
-rm ${TMPDIR}/${ID}.${cnvtype}.*.bed* ${BL} ${gcnv} ${cnMOPS_m}
+rm ${TMPDIR}/${ID}.${cnvtype}.*.bed* ${BL} ${gcnv} ${cnMOPS_m} ${DNAcopy}
