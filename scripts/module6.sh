@@ -18,7 +18,7 @@ min_geno=20 #minimum cohort size for incorporating CNV genotype information into
 mkdir ${WRKDIR}/consensusCNV
 
 #Genotype all CNV intervals if cohort has ≥ ${min_geno} samples, or if ${GENOTYPE_OVERRIDE}!="TRUE"
-if [ $( cat ${samples_list} | wc - ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE} != "TRUE" ]; then
+if [ $( cat ${samples_list} | wc -l ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE} != "TRUE" ]; then
   #Create master file of all CNV intervals
   if [ -e ${WRKDIR}/consensusCNV/CNVs_to_merge.list ]; then
     rm ${WRKDIR}/consensusCNV/CNVs_to_merge.list
