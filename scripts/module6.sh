@@ -58,8 +58,8 @@ if [ $( cat ${samples_list} | wc - ) -ge ${min_geno} ]; then
   mv ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_intervals.merged.bed2 ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_intervals.merged.bed
 
   #Genotype all consensus intervals
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV.R ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.genotypes.bed"
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV.R ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_intervals.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_intervals.merged.genotypes.bed"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV_batch.R ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_del_intervals.merged.genotypes.bed"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV_batch.R ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_intervals.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_intervals.merged.genotypes.bed"
 
   #Gate until complete; 20 sec check; 5 min report
   GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_genotyping" | wc -l )
@@ -111,8 +111,8 @@ ${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensus_dup_to_merge.list 10000 ${C
 
 #Genotype merged consensus CNVs
 if [ $( cat ${samples_list} | wc - ) -ge ${min_geno} ]; then
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/consensus_genotyping.log -e ${OUTDIR}/logs/consensus_genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV.R ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_dels.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_del_consensus.merged.genotypes.bed"
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/consensus_genotyping.log -e ${OUTDIR}/logs/consensus_genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV.R ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_dups.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_consensus.merged.genotypes.bed"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/consensus_genotyping.log -e ${OUTDIR}/logs/consensus_genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV_batch.R ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_dels.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_del_consensus.merged.genotypes.bed"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/consensus_genotyping.log -e ${OUTDIR}/logs/consensus_genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV_batch.R ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_dups.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_dup_consensus.merged.genotypes.bed"
 done < ${samples_list}
 
 #Gate until complete; 20 sec check; 5 min report
