@@ -3,7 +3,7 @@ Contact: Ryan Collins (rcollins@chgr.mgh.harvard.edu)
 Update: August 2015
 
 Execution command:
-liWGS_SV.sh samples.list parameters_info.sh
+runHolmes.sh samples.list parameters_info.sh
 
 ##INPUT##
 samples.list: three columns, tab delimited, col 1) sample ID, col 2) full path to sample bam, col 3) expected sex (M=XY, F=XX, O=other, U=unknown (will defer to predicted sex by sexcheck))
@@ -73,8 +73,18 @@ Returns single merged file each for consensus dels and consensus dups
 ##MODULE 7: COMPLEX SV CATEGORIZATION##
 Runs inversion classification script
 Runs translocation classification script
-**NEED TO ADD HARRISON COMPLEX SCRIPT**
-**NEED TO ADD COMPLEX SCRIPT PARSER**
+Runs complex linking script
+Runs complex parsing script
+
+##MODULE 8: VARIANT CONSOLIDATION & REFORMATTING
+Outputs the following seven variant files:
+-Deletion
+-Duplication
+-Inversion
+-Insertion
+-Translocation
+-Complex
+-Unresolved
 
 
 
