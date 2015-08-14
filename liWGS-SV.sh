@@ -170,7 +170,8 @@ bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module6.log -e ${OUTDIR}/logs/mod
 bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module7.log -e ${OUTDIR}/logs/module7.log -u nobody -J ${COHORT_ID}_MODULE_7 "${liWGS_SV}/scripts/module7.sh ${samples_list} ${params}"
 
 ##STAGE 4: module 8
-
+echo -e "STATUS [$(date)]: Beginning PHASE 4..."
+${liWGS_SV}/scripts/module8.sh ${samples_list} ${params}
 
 
 ##PRINT SUMMARY METRICS AT END OF RUN##
