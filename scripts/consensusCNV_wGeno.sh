@@ -34,6 +34,7 @@ module load bedtools/2.22.1
 BL=`mktemp`
 gcnv=`mktemp`
 DNAcopy=`mktemp`
+premerge=`mktemp`
 fgrep -v GL ${CNV_BLACKLIST} > ${BL}
 cnMOPS_m=`mktemp`
 cnMOPS_cutoff=50000 #size below which cnMOPS calls without clustering support become low-qual
@@ -64,8 +65,11 @@ mv ${gcnv}2 ${gcnv}
 #Removes DNAcopy intervals with >30% coverage by N-masked reference regions, also excludes X & Y
 bedtools coverage -a ${NMASK} -b ${DNAcopy_raw} | awk -v OFS="\t" '{ if ($NF<0.3 && $1!="X" && $1!="Y") print $1, $2, $3, $4, $5, $6 }' > ${DNAcopy}
 
-#Merges cnMOPS calls & DNAcopy calls, spans across assembly gaps
-cat <( cut --complement -f6 ${cnMOPS} ) <( awk -v OFS="\t" '{ print $1, $2, $3, "DNAcopy_"$5, $6, "DNAcopy" }' ${DNAcopy} ) <( awk -v OFS="\t" '{ print $0, "GAP_EXTENSION", "GAP_EXTENSION" }' /data/talkowski/rlc47/src/GRCh37_assemblyGaps.bed ) | sed -e 's/^X/23/g' -e 's/^Y/24/g' | sort -nk1,1 -k2,2n | bedtools merge -c 4,5,6 -o collapse -i - | sed -e 's/^23/X/g' -e 's/^24/Y/g'  | awk -v OFS="\t" -v ID=${ID} '$4 ~ /sampleName|DNAcopy/ { print $1, $2, $3+1, $4, $5, $6 }' > ${cnMOPS_m}
+#Merges cnMOPS calls & DNAcopy calls, spans across assembly gaps but only if gap is <50% size of existant call
+cat <( cut --complement -f6 ${cnMOPS} ) <( awk -v OFS="\t" '{ print $1, $2, $3, "DNAcopy_"$5, $6, "DNAcopy" }' ${DNAcopy} ) > ${premerge}
+while read chr start end A B C; do
+  bedtools intersect -wb -a <( echo -e "${chr}\t${start}\t${end}" ) -b ${NMASK} | awk -v OFS="\t" -v end=${end} -v start=${start} '{ if (($6-$5)<((end-start)/2)) print $4, $5, $6, "GAP_EXTENSION", "GAP_EXTENSION", "GAP_EXTENSION" }' | cat <( echo -e "${chr}\t${start}\t${end}\t${A}\t${B}\t${C}" ) - | sort -nk1,1 -k2,2n | bedtools merge -i - -c 4,5,6 -o collapse >> ${cnMOPS_m}
+done < ${premerge}
 
 #GROUP A, HIGH - Valid cluster w/ cnMOPS OR genotyping support, <30% blacklist
 bedtools intersect -u -r -f 0.51 -a ${TMPDIR}/${ID}_classifier.${cnvtype}.bed -b <( cat ${cnMOPS_m} ${gcnv} | cut -f1-5 ) | bedtools intersect -v -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupA_wGeno", "HIGH" }' > ${TMPDIR}/${ID}.${cnvtype}.A.bed
@@ -95,4 +99,4 @@ bedtools intersect -v -r -f 0.51 -a <( awk -v min=${clustering_cutoff} '{ if ($3
 cat ${TMPDIR}/${ID}.${cnvtype}.A.bed ${TMPDIR}/${ID}.${cnvtype}.B.bed ${TMPDIR}/${ID}.${cnvtype}.C.bed ${TMPDIR}/${ID}.${cnvtype}.D.bed ${TMPDIR}/${ID}.${cnvtype}.E.bed ${TMPDIR}/${ID}.${cnvtype}.F.bed ${TMPDIR}/${ID}.${cnvtype}.G.bed ${TMPDIR}/${ID}.${cnvtype}.H.bed | sed -e 's/^X/23/g' -e 's/^Y/24/g' | sort -nk1,1 -k2,2n | sed -e 's/^23/X/g' -e 's/^24/Y/g' > ${WRKDIR}/${ID}/${ID}.consensus.${cnvtype}.bed
 
 ##CLEAN UP
-rm ${TMPDIR}/${ID}.${cnvtype}.*.bed* ${BL} ${gcnv} ${cnMOPS_m} ${DNAcopy}
+rm ${TMPDIR}/${ID}.${cnvtype}.*.bed* ${BL} ${gcnv} ${cnMOPS_m} ${DNAcopy} ${premerge}
