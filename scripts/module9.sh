@@ -31,5 +31,5 @@ awk -v OFS="\t" '{ print $1, $2, $3, "INS_SOURCE", $7 }' ${WRKDIR}/final_variant
 bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/geneAnnotation.log -e ${OUTDIR}/logs/geneAnnotation.log -u nobody -J ${COHORT_ID}_annotation "${liWGS_SV}/scripts/annotate_SVintervals.sh ${WRKDIR}/annotations/insertionSource_preAnno.bed INS_SOURCE ${WRKDIR}/annotations/insertionSource_gene_anno.bed ${params}"
 
 #Submit insertion sink annotation
-awk -v OFS="\t" '{ print $4, $5, $6, "INS_SINK", $7 }' ${WRKDIR}/final_variants/${COHORT_ID}.insertion.bedpe | fgrep -v "#" > ${WRKDIR}/annotations/insertionSink_preAnno.bed
+awk -v OFS="\t" '{ print $4, $5, $6, "INS_SINK", $7 }' ${WRKDIR}/final_variants/${COHORT_ID}.insertion.bedpe | fgrep -v "#" | sed '1d' > ${WRKDIR}/annotations/insertionSink_preAnno.bed
 bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/geneAnnotation.log -e ${OUTDIR}/logs/geneAnnotation.log -u nobody -J ${COHORT_ID}_annotation "${liWGS_SV}/scripts/annotate_SVintervals.sh ${WRKDIR}/annotations/insertionSink_preAnno.bed INS_SINK ${WRKDIR}/annotations/insertionSink_gene_anno.bed ${params}"
