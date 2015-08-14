@@ -159,7 +159,6 @@ else
       GATEwait=0
     fi
   done
-
 fi
 
 ##STAGE 3: modules 6 and 7
@@ -173,8 +172,32 @@ bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module7.log -e ${OUTDIR}/logs/mod
 echo -e "STATUS [$(date)]: Beginning PHASE 4..."
 ${liWGS_SV}/scripts/module8.sh ${samples_list} ${params}
 
+##STAGE 5: module 9
+echo -e "STATUS [$(date)]: Beginning PHASE 5..."
+bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module9.log -e ${OUTDIR}/logs/module9.log -u nobody -J ${COHORT_ID}_MODULE_9 "${liWGS_SV}/scripts/module9.sh ${samples_list} ${params}"
+
+#Gate until module 9 completes; 20 sec check; 5 min report
+GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_9" | wc -l )
+GATEwait=0
+until [[ $GATEcount == 0 ]]; do
+  sleep 20s
+  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_9" | wc -l )
+  GATEwait=$[${GATEwait} +1]
+  if [[ $GATEwait == 15 ]]; then
+    echo -e "STATUS [$(date)]: Gated at PHASE 5..."
+    GATEwait=0
+  fi
+done
+
+#Move all relevant files to OUTDIR
+cp ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${OUTDIR}/data/seqDepth/
+cp ${WRKDIR}/final_variants/* ${OUTDIR}/SV_calls
+cp ${WRKDIR}/raw_clusters/* ${OUTDIR}/data/clusters
+mkdir ${OUTDIR}/SV_calls/annotations
+cp ${WRKDIR}/annotations/*_anno.bed ${OUTDIR}/SV_calls/annotations/
 
 ##PRINT SUMMARY METRICS AT END OF RUN##
+
 
 #Remove working directory unless specified otherwise
 if ! [ ${KEEP_TMP}=="TRUE" ]; then

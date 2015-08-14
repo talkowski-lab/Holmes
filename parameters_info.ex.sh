@@ -28,7 +28,9 @@ export DNAcopy_ref=/data/talkowski/rlc47/src/DNAcopy_reference.bindata.bed #DNAc
 export CNV_BLACKLIST=/data/talkowski/rlc47/src/GRch37.segdups_gaps_abParts_heterochrom.lumpy.exclude.bed #blacklist file, restrict CNV calling on >30% coverage of features in list 
 export bamstat_paths=NA #file containing paths to pre-run bamstat directories. First column: ID, second column: full path to bamstat directory; tab-delimited. Will be ignored unless pre_bamstat="TRUE"
 export abParts=/data/talkowski/rlc47/src/abParts.bed #path to antibody parts annotation file (available from UCSC), used for exclusion of putative complex site
-export NMASK=/data/talkowski/rlc47/src/GRCh37_Nmask.bed
+export NMASK=/data/talkowski/rlc47/src/GRCh37_Nmask.bed #bed file corresponding to N-masked regions of reference genome
+export refFlat=/data/talkowski/tools/bin/TGDB/BACKUP/hg19_refFlat_3_13_2014.bed
+export GTF=/data/talkowski/tools/ref/Ensembl_hgGRCh37_71/Homo_sapiens_GRCh37_71_ERCC.gtf
 
 #Update user paths
 export PATH=${PATH}:${CLASSIFIER_DIR}:${PYCLUSTER_DIR}
