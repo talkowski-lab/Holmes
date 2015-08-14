@@ -77,17 +77,30 @@ if [ $( cat ${samples_list} | wc -l ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE
 
   #Generate consensus CNVs per sample
   while read ID bam sex; do
-    ${liWGS_SV}/scripts/consensusCNV_wGeno.sh ${WRKDIR}/classifier/clusterfix/newCoords/deletion.events.reclassified.bedpe ${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed ${WRKDIR}/${ID}/DNAcopy.dels.bed ${WRKDIR}/${ID}/${ID}.merged_CNV.genotypes.bed ${ID} del ${params}
-    ${liWGS_SV}/scripts/consensusCNV_wGeno.sh ${WRKDIR}/classifier/clusterfix/newCoords/insertion.events.reclassified.bedpe ${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed ${WRKDIR}/${ID}/DNAcopy.dups.bed ${WRKDIR}/${ID}/${ID}.merged_CNV.genotypes.bed ${ID} dup ${params}
+    bsub -q short -sla miket_sc -o ${OUTDIR}/logs/consensusCNV.log -e ${OUTDIR}/logs/consensusCNV.log -J ${COHORT_ID}_consensusCNV "${liWGS_SV}/scripts/consensusCNV_wGeno.sh ${WRKDIR}/classifier/clusterfix/newCoords/deletion.events.reclassified.bedpe ${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed ${WRKDIR}/${ID}/DNAcopy.dels.bed ${WRKDIR}/${ID}/${ID}.merged_CNV.genotypes.bed ${ID} del ${params}"
+    bsub -q short -sla miket_sc -o ${OUTDIR}/logs/consensusCNV.log -e ${OUTDIR}/logs/consensusCNV.log -J ${COHORT_ID}_consensusCNV "${liWGS_SV}/scripts/consensusCNV_wGeno.sh ${WRKDIR}/classifier/clusterfix/newCoords/insertion.events.reclassified.bedpe ${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed ${WRKDIR}/${ID}/DNAcopy.dups.bed ${WRKDIR}/${ID}/${ID}.merged_CNV.genotypes.bed ${ID} dup ${params}"
   done < ${samples_list}
 else
   echo "WARNING [MODULE 6]: Cohort has fewer than ${min_geno} samples; consensus CNVs will not incorporate joint genotyping information" >> ${OUTDIR}/${COHORT_ID}_WARNINGS.txt
   #Generate consensus CNVs per sample
   while read ID bam sex; do
-    ${liWGS_SV}/scripts/consensusCNV_noGeno.sh ${WRKDIR}/classifier/clusterfix/newCoords/deletion.events.reclassified.bedpe ${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed ${WRKDIR}/${ID}/DNAcopy.dels.bed ${ID} del ${params}
-    ${liWGS_SV}/scripts/consensusCNV_noGeno.sh ${WRKDIR}/classifier/clusterfix/newCoords/insertion.events.reclassified.bedpe ${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed ${WRKDIR}/${ID}/DNAcopy.dups.bed ${ID} dup ${params}
+    bsub -q short -sla miket_sc -o ${OUTDIR}/logs/consensusCNV.log -e ${OUTDIR}/logs/consensusCNV.log -J ${COHORT_ID}_consensusCNV "${liWGS_SV}/scripts/consensusCNV_noGeno.sh ${WRKDIR}/classifier/clusterfix/newCoords/deletion.events.reclassified.bedpe ${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed ${WRKDIR}/${ID}/DNAcopy.dels.bed ${ID} del ${params}"
+    bsub -q short -sla miket_sc -o ${OUTDIR}/logs/consensusCNV.log -e ${OUTDIR}/logs/consensusCNV.log -J ${COHORT_ID}_consensusCNV "${liWGS_SV}/scripts/consensusCNV_noGeno.sh ${WRKDIR}/classifier/clusterfix/newCoords/insertion.events.reclassified.bedpe ${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed ${WRKDIR}/${ID}/DNAcopy.dups.bed ${ID} dup ${params}"
   done < ${samples_list}
 fi
+
+  #Gate until complete; 20 sec check; 5 min report
+  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_consensusCNV" | wc -l )
+  GATEwait=0
+  until [[ $GATEcount == 0 ]]; do
+    sleep 20s
+    GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_consensusCNV" | wc -l )
+    GATEwait=$[${GATEwait} +1]
+    if [[ $GATEwait == 15 ]]; then
+      echo -e "STATUS [$(date)]: Waiting on ${GATEcount} jobs..."
+      GATEwait=0
+    fi
+  done
 
 #Merge all consensus CNVs
 if [ -e ${WRKDIR}/consensus_del_to_merge.list ]; then
