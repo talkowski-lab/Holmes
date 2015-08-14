@@ -7,6 +7,51 @@
 # MARCH 2015
 ###################
 
+######OUTPUT CATEGORIES######
+#
+# DOUBLE-ENDERS: Resolved, all were clustered as double enders
+# -SIMPLE: simple (aka canonical) inversion
+# -DEL3: INVdel
+# -DEL5: delINV
+# -DEL35: delINVdel
+# -DUP3_DEL5: delINVdup
+# -DUP3: INVdup
+# -EXINS3_iDEL: excised inverted insertion from upstream (smaller coordinate)/to downstream (larger coordinate) with deletion at the insertion site
+# -EXINS3: excised inverted insertion from upstream (smaller coordinate)/to downstream (larger coordinate)
+# -INS3_UNK_iDEL: insertion from upstream (smaller coordinate)/to downstream (larger coordinate) with deletion at the insertion site, unclear if duplicated or excised
+# -INS3_UNK: insertion from upstream (smaller coordinate)/to downstream (larger coordinate), unclear if duplicated or excised
+# -DUP5_DEL3: dupINVdel
+# -DUP5: dupINV
+# -EXINS5_iDEL: excised inverted insertion from downstream (larger coordinate)/to upstream (smaller coordinate) with deletion at the insertion site
+# -EXINS5: excised inverted insertion from downstream (larger coordinate)/to upstream (smaller coordinate)
+# -INS5_UNK_iDEL: inverted insertion from downstream (larger coordinate)/to upstream (smaller coordinate) with deletion at the insertion site, unclear if duplicated or excised
+# -INS5_UNK: inverted insertion from downstream (larger coordinate)/to upstream (smaller coordinate), unclear if duplicated or excised
+# -dupINVdup
+
+# LINKED DOUBLE-ENDERS: Reolved, all started as two unpaired single-enders that were linked due to approximate cluster footprint overlaps
+# -LINKED_del3INVdel5: delINVdel
+# -LINKED_dup3INVdel5: delINVdup
+# -LINKED_del3INVdup5: dupINVdel
+# -LINKED_dup3INVdup5: dupINVdup
+# -LINKED_INVdel5_OTHER: delINV with additional complexity (resolve manually)
+# -LINKED_INVdup5_OTHER: dupINV with additional complexity (resolve manually)
+# -LINKED_del3INV_OTHER: INVdel with additional complexity (resolve manually)
+# -LINKED_dup3INV_OTHER: INVdup with additional complexity (resolve manually)
+# -LINKED_OTHER: linked single enders, additional complexity (resolve manually)
+
+# SINGLE-ENDERS: ALL UNRESOLVED. SE5 = (+/+) cluster, SE3 = (-/-) cluster
+# -UNRESOLVED: no overlapping clusters or dosage
+# -DEL: breakpoint overlaps depth-based deletion call
+# -DUP: breakpoint overlaps depth-based duplication call
+# -DEL_DUP: one breakpoint overlaps depth-based deletion, other overlaps depth-based duplication
+# -EXCISION: overlaps deletion cluster
+# -INSERTION: overlaps insertion cluster
+# -COMPLEX_OTHER: overlap with multiple cluster and/or depth types
+
+# OTHER:
+# TANDEM_DUP_INV: inverted tandem duplication (also known as inverted repeats)
+# FLAG: cluster did not fit into any of the above categories and/or had characteristics which made it impossible to resolve by the script
+
 # checks for appropriate input
 if [ $# -eq 8 ]; then
 
