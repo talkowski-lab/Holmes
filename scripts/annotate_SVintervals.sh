@@ -12,6 +12,7 @@ params=$4 #liWGS-SV params
 #Set other parameters
 TMPDIR=`mktemp -d`
 module load bedtools/2.22.1
+module load R/R-3.0.0
 
 #Process variants
 case ${type} in
