@@ -57,109 +57,54 @@ bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module2.log -e ${OUTDIR}/logs/mod
 #Submit module 3 (per-sample clustering)
 bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module3.log -e ${OUTDIR}/logs/module3.log -u nobody -J ${COHORT_ID}_MODULE_3 "${liWGS_SV}/scripts/module3.sh ${samples_list} ${params}"
 
-#module 4 before module 5 if ${pre_bamstat}!=TRUE
-if ! [ ${pre_bamstat}=="TRUE" ]; then
-
-  #Gate until modules 1 & 2 complete; 20 sec check; 5 min report
+#Gate until modules 1 & 2 complete; 20 sec check; 5 min report
+GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_1\|${COHORT_ID}_MODULE_2" | wc -l )
+GATEwait=0
+until [[ $GATEcount == 0 ]]; do
+  sleep 20s
   GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_1\|${COHORT_ID}_MODULE_2" | wc -l )
-  GATEwait=0
-  until [[ $GATEcount == 0 ]]; do
-    sleep 20s
-    GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_1\|${COHORT_ID}_MODULE_2" | wc -l )
-    GATEwait=$[${GATEwait} +1]
-    if [[ $GATEwait == 15 ]]; then
-      echo -e "STATUS [$(date)]: Gated at PHASE 1a..."
-      GATEwait=0
-    fi
-  done
+  GATEwait=$[${GATEwait} +1]
+  if [[ $GATEwait == 15 ]]; then
+    echo -e "STATUS [$(date)]: Gated at PHASE 1a..."
+    GATEwait=0
+  fi
+done
 
-  ##STAGE 2a: module 4
-  echo -e "STATUS [$(date)]: PHASE 1a complete; Beginning PHASE 2a..."
-  #Submit module 4 (physical depth CNV calling)
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module4.log -e ${OUTDIR}/logs/module4.log -u nobody -J ${COHORT_ID}_MODULE_4 "${liWGS_SV}/scripts/module4.sh ${samples_list} ${params}"
+##STAGE 2a: module 4
+echo -e "STATUS [$(date)]: PHASE 1a complete; Beginning PHASE 2a..."
+#Submit module 4 (physical depth CNV calling)
+bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module4.log -e ${OUTDIR}/logs/module4.log -u nobody -J ${COHORT_ID}_MODULE_4 "${liWGS_SV}/scripts/module4.sh ${samples_list} ${params}"
 
-  #Gate until module 3 complete; 20 sec check; 5 min report
+#Gate until module 3 complete; 20 sec check; 5 min report
+GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_3" | wc -l )
+GATEwait=0
+until [[ $GATEcount == 0 ]]; do
+  sleep 20s
   GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_3" | wc -l )
-  GATEwait=0
-  until [[ $GATEcount == 0 ]]; do
-    sleep 20s
-    GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_3" | wc -l )
-    GATEwait=$[${GATEwait} +1]
-    if [[ $GATEwait == 15 ]]; then
-      echo -e "STATUS [$(date)]: Gated at PHASE 1b..."
-      GATEwait=0
-    fi
-  done
+  GATEwait=$[${GATEwait} +1]
+  if [[ $GATEwait == 15 ]]; then
+    echo -e "STATUS [$(date)]: Gated at PHASE 1b..."
+    GATEwait=0
+  fi
+done
 
-  ##STAGE 2b: module 5
-  echo -e "STATUS [$(date)]: PHASE 1b complete; Beginning PHASE 2b..."
-  #Submit module 5 (joint clustering)
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module5.log -e ${OUTDIR}/logs/module5.log -u nobody -J ${COHORT_ID}_MODULE_5 "${liWGS_SV}/scripts/module5.sh ${samples_list} ${params}"
+##STAGE 2b: module 5
+echo -e "STATUS [$(date)]: PHASE 1b complete; Beginning PHASE 2b..."
+#Submit module 5 (joint clustering)
+bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module5.log -e ${OUTDIR}/logs/module5.log -u nobody -J ${COHORT_ID}_MODULE_5 "${liWGS_SV}/scripts/module5.sh ${samples_list} ${params}"
 
-  #Gate until modules 4 & 5 complete; 20 sec check; 5 min report
+#Gate until modules 4 & 5 complete; 20 sec check; 5 min report
+GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_4\|${COHORT_ID}_MODULE_5" | wc -l )
+GATEwait=0
+until [[ $GATEcount == 0 ]]; do
+  sleep 20s
   GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_4\|${COHORT_ID}_MODULE_5" | wc -l )
-  GATEwait=0
-  until [[ $GATEcount == 0 ]]; do
-    sleep 20s
-    GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_4\|${COHORT_ID}_MODULE_5" | wc -l )
-    GATEwait=$[${GATEwait} +1]
-    if [[ $GATEwait == 15 ]]; then
-      echo -e "STATUS [$(date)]: Gated at PHASE 2..."
-      GATEwait=0
-    fi
-  done
-
-else
-
-  #Gate until modules 1 & 2 complete; 20 sec check; 5 min report
-  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_1\|${COHORT_ID}_MODULE_3" | wc -l )
-  GATEwait=0
-  until [[ $GATEcount == 0 ]]; do
-    sleep 20s
-    GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_1\|${COHORT_ID}_MODULE_3" | wc -l )
-    GATEwait=$[${GATEwait} +1]
-    if [[ $GATEwait == 15 ]]; then
-      echo -e "STATUS [$(date)]: Gated at PHASE 1a..."
-      GATEwait=0
-    fi
-  done
-
-  ##STAGE 2a: module 5
-  echo -e "STATUS [$(date)]: PHASE 1a complete; Beginning PHASE 2a..."
-  #Submit module 5 (joint clustering)
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module5.log -e ${OUTDIR}/logs/module5.log -u nobody -J ${COHORT_ID}_MODULE_5 "${liWGS_SV}/scripts/module5.sh ${samples_list} ${params}"
-
-  #Gate until module 2 complete; 20 sec check; 5 min report
-  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_2" | wc -l )
-  GATEwait=0
-  until [[ $GATEcount == 0 ]]; do
-    sleep 20s
-    GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_2" | wc -l )
-    GATEwait=$[${GATEwait} +1]
-    if [[ $GATEwait == 15 ]]; then
-      echo -e "STATUS [$(date)]: Gated at PHASE 1b..."
-      GATEwait=0
-    fi
-  done
-
-  ##STAGE 2b: module 4
-  echo -e "STATUS [$(date)]: PHASE 1b complete; Beginning PHASE 2b..."
-  #Submit module 4 (physical depth CNV calling)
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module4.log -e ${OUTDIR}/logs/module4.log -u nobody -J ${COHORT_ID}_MODULE_4 "${liWGS_SV}/scripts/module4.sh ${samples_list} ${params}"
-
-  #Gate until modules 4 & 5 complete; 20 sec check; 5 min report
-  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_4\|${COHORT_ID}_MODULE_5" | wc -l )
-  GATEwait=0
-  until [[ $GATEcount == 0 ]]; do
-    sleep 20s
-    GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_4\|${COHORT_ID}_MODULE_5" | wc -l )
-    GATEwait=$[${GATEwait} +1]
-    if [[ $GATEwait == 15 ]]; then
-      echo -e "STATUS [$(date)]: Gated at PHASE 2..."
-      GATEwait=0
-    fi
-  done
-fi
+  GATEwait=$[${GATEwait} +1]
+  if [[ $GATEwait == 15 ]]; then
+    echo -e "STATUS [$(date)]: Gated at PHASE 2..."
+    GATEwait=0
+  fi
+done
 
 ##STAGE 3: modules 6 and 7
 echo -e "STATUS [$(date)]: Beginning PHASE 3..."

@@ -24,6 +24,7 @@ while read ID bam sex; do
 done < ${samples_list}
 
 #Load cnMOPS modules
+module unload R/3.1.0
 module load R/R-3.0.0
 
 #Submit cnMOPS - autosomes
@@ -33,7 +34,7 @@ for contig in $( seq 1 22 ); do
   mkdir ${WRKDIR}/cnMOPS/${contig}
   cat <( head -n1 ${cov} ) <( awk -v chr=${contig} '{ if ($1==chr) print }' ${cov} ) > ${WRKDIR}/cnMOPS/${contig}/${COHORT_ID}.rawCov.chr${contig}.bed
   for binsize in 1 3 10 30; do
-    bsub -q big -M 30000 -sla miket_sc -u nobody -o ${OUTDIR}/logs/cnMOPS.log -e ${OUTDIR}/logs/cnMOPS.log -R 'rusage[mem=30000]' -v 40000 -J ${COHORT_ID}_cnMOPS "Rscript ${liWGS_SV}/scripts/cnMOPS_postcoverage.R -m insert -r ${binsize} -b ${binsize}000 -I ${COHORT_ID} ${WRKDIR}/cnMOPS/${contig}/${COHORT_ID}.rawCov.chr${contig}.bed ${WRKDIR}/cnMOPS/${contig}/"
+    bsub -q big -M 30000 -sla miket_sc -u nobody -o ${OUTDIR}/logs/cnMOPS.log -e ${OUTDIR}/logs/cnMOPS.log -R 'rusage[mem=30000]' -v 40000 -J ${COHORT_ID}_cnMOPS "module load R/R-3.0.0; Rscript ${liWGS_SV}/scripts/cnMOPS_postcoverage.R -m insert -r ${binsize} -b ${binsize}000 -I ${COHORT_ID} ${WRKDIR}/cnMOPS/${contig}/${COHORT_ID}.rawCov.chr${contig}.bed ${WRKDIR}/cnMOPS/${contig}/"
   done
 done
 
