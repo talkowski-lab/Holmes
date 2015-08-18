@@ -30,6 +30,7 @@ mkdir ${OUTDIR}/data/seqDepth
 mkdir ${OUTDIR}/data/clusters
 mkdir ${OUTDIR}/SV_calls
 mkdir ${OUTDIR}/logs
+mkdir ${OUTDIR}/plots
 cp ${params} ${OUTDIR}/${COHORT_ID}.run_parameters.sh
 
 #Set up working directory tree

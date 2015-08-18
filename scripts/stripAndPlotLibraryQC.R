@@ -91,7 +91,7 @@ for(i in c(2:12,15)){
 
 #Plot metrics
 #sets layout & output
-pdf(args[3],paper="USr",height=6.5,width=10.5)
+pdf(paste('"',args[3],'"',sep=""),paper="USr",height=6.5,width=10.5)
 layout(matrix(c(1,1,2,4,1,1,3,5,8,8,7,6),3,4,byrow=TRUE))
 
 #[1] histogram of coverage
