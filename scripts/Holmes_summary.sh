@@ -34,11 +34,25 @@ while read ID bam sex; do
 done < ${samples_list} | paste - - - - - - - - - - - - - - - >> ${OUTDIR}/QC/cohort/${COHORT_ID}.SV.metrics
 
 #Write final report to base level $OUTDIR
-echo -e "
-##################################\n\
+echo -e "##################################\n\
 #   HOLMES liWGS-SV RUN REPORT   #\n\
-##################################\n\
-
+##################################\n\n\
++-------------+
+| RUN DETAILS |\n\
++-------------+\n\
+Cohort: ${COHORT_ID} (n=$( cat ${samples_list} | wc -l))\n\
 Started: $( cat ${WRKDIR}/start.tmp | awk '{ print $1, $2, $3, $NF }' )\n\
 Finished: $( echo $(date) | awk '{ print $1, $2, $3, $NF }' )\n\
-"
+User: ${USER}\n\n\
++-------------------------+\n\
+| AVERAGE LIBRARY METRICS |\n\
++-------------------------+" > ${OUTDIR}/${COHORT_ID}.run_summary.txt
+Rscript ${liWGS_SV}/scripts/stripQC.R ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics ${OUTDIR}/${COHORT_ID}.run_summary.txt
+echo -e "\n"
+
+Also include:
+clustering (num clusters per sample, outliers)
+depth (num depth calls per sample, outliers)
+SV calls (num final calls per sample, outliers)
+SV sizes (median & IQR per class)
+gene annotations (num genes LOF/dup/etc per sample, outliers)

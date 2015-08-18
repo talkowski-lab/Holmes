@@ -11,11 +11,11 @@ options(scipen=1000)
 
 #Load file
 x <- read.table(args[1],comment.char="#",header=F)
-colnames(x) <- c("ID","Total Reads","Read Alignment Rate","Pair Alignment Rate","Proper Pairs",
+colnames(x) <- c("ID","Total Read Pairs","Read Alignment Rate","Pair Alignment Rate","Proper Pairs",
                  "Chimeras","Read Duplicates","Pair Duplicates","Median Insert Size",
                  "Insert MAD","Haploid Physical Coverage","Haploid Nucleotide Coverage","Reported Sex",
                  "Observed Sex","Absolute Dosage Z-Score")
-x[,2] <- x[,2]/1000000
+x[,2] <- x[,2]/2000000
 x[,3:8] <- 100*x[,3:8]
 
 #Write metrics
