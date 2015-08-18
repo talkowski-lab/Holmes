@@ -39,11 +39,11 @@ for(i in c(2:12,15)){
     #                                x[,i]<=median(x[,i]-1.5*iqr)),i]),
     #               "\n",sep=""),
     #         file=args[2],append=T)
-    rbind(df,c(colnames(x)[i],
-              paste(prettyNum(summary(x[,i]),big.mark=","),
-                    "M",sep=""),
-              length(x[which(x[,i]>=median(x[,i])+(1.5*iqr) |
-                               x[,i]<=median(x[,i]-1.5*iqr)),i])))
+    df <- rbind(df,c(colnames(x)[i],
+                     paste(prettyNum(summary(x[,i]),big.mark=","),
+                           "M",sep=""),
+                     length(x[which(x[,i]>=median(x[,i])+(1.5*iqr) |
+                                      x[,i]<=median(x[,i]-1.5*iqr)),i])))
   }else if(i %in% c(3:8)){
     #     cat(paste(" => ",colnames(x)[i],"\n      -Median: ",        
     #               round(summary(x[,i])[3],2),
@@ -60,11 +60,11 @@ for(i in c(2:12,15)){
     #                                x[,i]<=median(x[,i]-1.5*iqr)),i]),
     #               "\n",sep=""),
     #         file=args[2],append=T)
-    rbind(df,c(colnames(x)[i],
-              paste(round(summary(x[,i]),2),
-                      "%",sep=""),
-              length(x[which(x[,i]>=median(x[,i])+(1.5*iqr) |
-                               x[,i]<=median(x[,i]-1.5*iqr)),i])))
+    df <- rbind(df,c(colnames(x)[i],
+                     paste(round(summary(x[,i]),2),
+                           "%",sep=""),
+                     length(x[which(x[,i]>=median(x[,i])+(1.5*iqr) |
+                                      x[,i]<=median(x[,i]-1.5*iqr)),i])))
   }else if(i %in% c(9,10)){
     #     cat(paste(" => ",colnames(x)[i],"\n      -Median: ",    
     #               prettyNum(summary(x[,i])[3],big.mark=","),
@@ -81,10 +81,10 @@ for(i in c(2:12,15)){
     #                                x[,i]<=median(x[,i]-1.5*iqr)),i]),
     #               "\n",sep=""),
     #         file=args[2],append=T)
-    rbind(df,c(colnames(x)[i],
-              prettyNum(summary(x[,i]),big.mark=","),
-              length(x[which(x[,i]>=median(x[,i])+(1.5*iqr) |
-                               x[,i]<=median(x[,i]-1.5*iqr)),i])))
+    df <- rbind(df,c(colnames(x)[i],
+                     prettyNum(summary(x[,i]),big.mark=","),
+                     length(x[which(x[,i]>=median(x[,i])+(1.5*iqr) |
+                                      x[,i]<=median(x[,i]-1.5*iqr)),i])))
   }else{
     #     cat(paste(" => ",colnames(x)[i],"\n      -Median: ",    
     #               round(summary(x[,i])[3],2),
@@ -101,10 +101,10 @@ for(i in c(2:12,15)){
     #                                x[,i]<=median(x[,i]-1.5*iqr)),i]),
     #               "\n",sep=""),
     #         file=args[2],append=T)
-    rbind(df,c(colnames(x)[i],
-              round(summary(x[,i]),2),
-              length(x[which(x[,i]>=median(x[,i])+(1.5*iqr) |
-                               x[,i]<=median(x[,i]-1.5*iqr)),i])))
+    df <- rbind(df,c(colnames(x)[i],
+                     round(summary(x[,i]),2),
+                     length(x[which(x[,i]>=median(x[,i])+(1.5*iqr) |
+                                      x[,i]<=median(x[,i]-1.5*iqr)),i])))
   }
 }
 write.table(df,args[2],sep="\t",append=T,row.names=F,col.names=F)
@@ -218,6 +218,3 @@ axis(1,at=c(as.vector(pl$stats),max(x[,2])),
                                 max(x[,2])))),"M",sep=""))
 
 dev.off()
-
-
-
