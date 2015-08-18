@@ -195,7 +195,7 @@ pl <- boxplot(x[,2],
               cex.axis=0.7)
 axis(1,at=c(as.vector(pl$stats),max(x[,2])),
      labels=paste(c(prettyNum(c(as.vector(pl$stats),
-                                max(x[,2])),digits=0)),"M",sep=""))
+                                max(x[,2])))),"M",sep=""))
 
 dev.off()
 
