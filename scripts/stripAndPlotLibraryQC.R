@@ -115,6 +115,7 @@ for(i in c(2:12,15)){
                                x[,i]<=median(x[,i]-1.5*iqr)),i])),
               sep="\t"),
         file=args[2],append=T)
+    cat("\n",file=args[2],append=T)
   }
 }
 
