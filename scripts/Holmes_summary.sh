@@ -41,14 +41,36 @@ echo -e "##################################\n\
 | RUN DETAILS |\n\
 +-------------+\n\
 Cohort: ${COHORT_ID} (n=$( cat ${samples_list} | wc -l))\n\
-Started: $( cat ${WRKDIR}/start.tmp | awk '{ print $1, $2, $3, $NF }' )\n\
-Finished: $( echo $(date) | awk '{ print $1, $2, $3, $NF }' )\n\
-User: ${USER}\n\n\
+Started: $( cat ${WRKDIR}/start.tmp )\n\
+Finished: $( echo $(date) )\n\
+User: ${USER}
+Output Directory: ${OUTDIR}\n\
+Temporary Directory: ${WRKDIR}\n\
+Artifact VAF Filter: ${polyArt_filter}\n\
+Reference Genome: ${REF}\n\n\
 +-------------------------+\n\
 | AVERAGE LIBRARY METRICS |\n\
 +-------------------------+" > ${OUTDIR}/${COHORT_ID}.run_summary.txt
-Rscript ${liWGS_SV}/scripts/stripQC.R ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics ${OUTDIR}/${COHORT_ID}.run_summary.txt
-echo -e "\n"
+Rscript ${liWGS_SV}/scripts/stripAndPlotLibraryQC.R ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics ${OUTDIR}/${COHORT_ID}.run_summary.txt ${OUTDIR}/plots/${COHORT_ID}.libraryQC.pdf
+echo -e "\n\
++----------------+\n\
+| RAW SV SIGNALS |\n\
++----------------+" >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
+tail -n2 ${OUTDIR}/data/clusters/${COHORT_ID}.deletion.clusters.txt | head -n1 | cut -f1 | paste -d" " <( echo " => Raw Deletion Clusters:" ) - >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
+fgrep Valid ${OUTDIR}/data/clusters/${COHORT_ID}.deletion.events.bedpe | wc -l | paste -d" " <( echo " => Classified Valid Deletion Clusters:" ) - >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
+while read ID bam sex; do
+  cat ${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed | wc -l
+done < ${samples_list} | awk '{ sum+=$1 } END { print sum/NR }' | cut -f1 -d. | paste -d" " <( echo " => Average cnMOPS Deletions per Sample:" ) - >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
+tail -n2 ${OUTDIR}/data/clusters/${COHORT_ID}.insertion.clusters.txt | head -n1 | cut -f1 | paste -d" " <( echo " => Raw Insertion Clusters:" ) - >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
+fgrep Valid ${OUTDIR}/data/clusters/${COHORT_ID}.insertion.events.bedpe | wc -l | paste -d" " <( echo " => Classified Valid Insertion Clusters:" ) - >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
+while read ID bam sex; do
+  cat ${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed | wc -l
+done < ${samples_list} | awk '{ sum+=$1 } END { print sum/NR }' | cut -f1 -d. | paste -d" " <( echo " => Average cnMOPS Duplications per Sample:" ) - >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
+tail -n2 ${OUTDIR}/data/clusters/${COHORT_ID}.inversion.clusters.txt | head -n1 | cut -f1 | paste -d" " <( echo " => Raw Inversion Clusters:" ) - >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
+fgrep Valid ${OUTDIR}/data/clusters/${COHORT_ID}.inversion.events.bedpe | wc -l | paste -d" " <( echo " => Classified Valid Inversion Clusters:" ) - >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
+tail -n2 ${OUTDIR}/data/clusters/${COHORT_ID}.transloc.clusters.txt | head -n1 | cut -f1 | paste -d" " <( echo " => Raw Translocation Clusters:" ) - >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
+fgrep Valid ${OUTDIR}/data/clusters/${COHORT_ID}.transloc.events.bedpe | wc -l | paste -d" " <( echo " => Classified Valid Translocation Clusters:" ) - >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
+
 
 Also include:
 clustering (num clusters per sample, outliers)
