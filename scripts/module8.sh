@@ -31,8 +31,8 @@ done
 for type in deletion duplication; do
   echo -e "#chr\tstart\tend\tID\tmergedist_5\tmergedist_3\tobservations\tsamples\tinfo" > ${WRKDIR}/final_variants/${COHORT_ID}.${type}.bed
 done
-cat ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_dels.merged.bed > ${WRKDIR}/final_variants/${COHORT_ID}.deletion.bed
-cat ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_dups.merged.bed > ${WRKDIR}/final_variants/${COHORT_ID}.duplication.bed
+cat ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_dels.merged.bed >> ${WRKDIR}/final_variants/${COHORT_ID}.deletion.bed
+cat ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_dups.merged.bed >> ${WRKDIR}/final_variants/${COHORT_ID}.duplication.bed
 
 #Write out simple inversions
 echo -e "#chr\tminplus\tmaxplus\tchr\tminminus\tmaxminus\tID\tstA\tstB\tobservations\tsamples\tclusters" > ${WRKDIR}/final_variants/${COHORT_ID}.inversion.bedpe

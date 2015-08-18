@@ -41,6 +41,9 @@ while read ID bam sex; do
 done < ${samples_list}
 cp ${liWGS_SV}/scripts/SE_largeCNV/* ${WRKDIR}/
 
+#Write start date to temporary file
+echo $(date) > ${WRKDIR}/start.tmp
+
 #Link & index all bams
 echo -e "STATUS [$(date)]: Indexing BAMs..."
 while read ID bam sex; do
@@ -113,6 +116,19 @@ bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module6.log -e ${OUTDIR}/logs/mod
 #Submit module 7 (complex SV categorization)
 bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module7.log -e ${OUTDIR}/logs/module7.log -u nobody -J ${COHORT_ID}_MODULE_7 "${liWGS_SV}/scripts/module7.sh ${samples_list} ${params}"
 
+#Gate until modules 6 & 7 completes; 20 sec check; 5 min report
+GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_6\|${COHORT_ID}_MODULE_7" | wc -l )
+GATEwait=0
+until [[ $GATEcount == 0 ]]; do
+  sleep 20s
+  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_6\|${COHORT_ID}_MODULE_7" | wc -l )
+  GATEwait=$[${GATEwait} +1]
+  if [[ $GATEwait == 15 ]]; then
+    echo -e "STATUS [$(date)]: Gated at PHASE 3..."
+    GATEwait=0
+  fi
+done
+
 ##STAGE 4: module 8
 echo -e "STATUS [$(date)]: Beginning PHASE 4..."
 ${liWGS_SV}/scripts/module8.sh ${samples_list} ${params}
@@ -139,9 +155,11 @@ cp ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${OUTDIR}/data/seqDepth/
 cp ${WRKDIR}/final_variants/* ${OUTDIR}/SV_calls
 cp ${WRKDIR}/raw_clusters/* ${OUTDIR}/data/clusters
 mkdir ${OUTDIR}/SV_calls/annotations
-cp ${WRKDIR}/annotations/*_anno.bed ${OUTDIR}/SV_calls/annotations/
+cp ${WRKDIR}/annotations/*_gene_anno.bed ${OUTDIR}/SV_calls/annotations/
 
-##PRINT SUMMARY METRICS AT END OF RUN##
+#Summarize run outcomes
+echo -e "STATUS [$(date)]: Calculating run summary metrics..."
+bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/finalSummary.log -e ${OUTDIR}/logs/finalSummary.log -u nobody -J ${COHORT_ID}_SUMMARIZE "${liWGS_SV}/scripts/Holmes_summary.sh ${samples_list} ${params}"
 
 
 #Remove working directory unless specified otherwise
