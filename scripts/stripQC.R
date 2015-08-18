@@ -36,7 +36,7 @@ for(i in c(2:12,15)){
               length(x[which(x[,i]>=median(x[,i])+(1.5*iqr) |
                                x[,i]<=median(x[,i]-1.5*iqr)),i]),
               "\n",sep=""),
-        file=fileConn,append=T)
+        file=args[2],append=T)
   }else if(i %in% c(3:8)){
     cat(paste(" => ",colnames(x)[i],"\n      -Median: ",        
               round(summary(x[,i])[3],2),
@@ -52,7 +52,7 @@ for(i in c(2:12,15)){
               length(x[which(x[,i]>=median(x[,i])+(1.5*iqr) |
                                x[,i]<=median(x[,i]-1.5*iqr)),i]),
               "\n",sep=""),
-        file=fileConn,append=T)
+        file=args[2],append=T)
   }else if(i %in% c(9,10)){
     cat(paste(" => ",colnames(x)[i],"\n      -Median: ",    
               prettyNum(summary(x[,i])[3],big.mark=","),
@@ -68,7 +68,7 @@ for(i in c(2:12,15)){
               length(x[which(x[,i]>=median(x[,i])+(1.5*iqr) |
                                x[,i]<=median(x[,i]-1.5*iqr)),i]),
               "\n",sep=""),
-        file=fileConn,append=T)
+        file=args[2],append=T)
   }else{
     cat(paste(" => ",colnames(x)[i],"\n      -Median: ",    
               round(summary(x[,i])[3],2),
