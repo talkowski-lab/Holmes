@@ -136,8 +136,51 @@ echo -e "\n\
 | SV SIZES |\n\
 +----------+" >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
 Rscript ${liWGS_SV}/scripts/scrapeSVsizes.R ${WRKDIR}/sizes/ ${OUTDIR}/${COHORT_ID}.run_summary.txt ${OUTDIR}/plots/${COHORT_ID}.SVsizes.pdf
+awk -v max=${maxCount} '{ if ($7<=max) print $4 }' ${OUTDIR}/SV_calls/${COHORT_ID}.deletion.bed > ${WRKDIR}/nonArtifact.variantIDs.list
+awk -v max=${maxCount} '{ if ($7<=max) print $4 }' ${OUTDIR}/SV_calls/${COHORT_ID}.duplication.bed >> ${WRKDIR}/nonArtifact.variantIDs.list
+awk -v max=${maxCount} '{ if ($6<=max) print $4 }' ${OUTDIR}/SV_calls/${COHORT_ID}.complex.bed >> ${WRKDIR}/nonArtifact.variantIDs.list
+awk -v max=${maxCount} '{ if ($6<=max) print $4 }' ${OUTDIR}/SV_calls/${COHORT_ID}.unresolved.bed >> ${WRKDIR}/nonArtifact.variantIDs.list
+awk -v max=${maxCount} '{ if ($10<=max) print $7 }' ${OUTDIR}/SV_calls/${COHORT_ID}.insertion.bedpe >> ${WRKDIR}/nonArtifact.variantIDs.list
+awk -v max=${maxCount} '{ if ($10<=max) print $7 }' ${OUTDIR}/SV_calls/${COHORT_ID}.inversion.bedpe >> ${WRKDIR}/nonArtifact.variantIDs.list
+awk -v max=${maxCount} '{ if ($10<=max) print $7 }' ${OUTDIR}/SV_calls/${COHORT_ID}.translocation.bedpe >> ${WRKDIR}/nonArtifact.variantIDs.list
+rm ${WRKDIR}/annotations/*per_sample.txt
+while read ID bam sex; do
+  for class in LOF GOF pLOF pD; do
+    cat <( cat ${OUTDIR}/SV_calls/${COHORT_ID}*.bedpe | fgrep -w ${ID} | cut -f7 ) <( cat ${OUTDIR}/SV_calls/${COHORT_ID}*.bed | fgrep -w ${ID} | cut -f4 ) | fgrep -wf - ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed -e 's/_/\t/g' -e 's/,/\t/g'  -e '/^$/d' | cut -f$(seq 1 2 10000 | paste -s -d,) | fgrep -w ${class} | wc -l >> ${WRKDIR}/annotations/${class}_variants_per_sample.txt
+    cat <( cat ${OUTDIR}/SV_calls/${COHORT_ID}*.bedpe | fgrep -w ${ID} | cut -f7 ) <( cat ${OUTDIR}/SV_calls/${COHORT_ID}*.bed | fgrep -w ${ID} | cut -f4 ) | fgrep -wf - ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed 's/,/\n/g' | sed '/^$/d' | sort | uniq | sed 's/_/\t/g' | awk -v class=${class} '{ if ($1==class) print $0 }' | wc -l >> ${WRKDIR}/annotations/${class}_genes_per_sample.txt  
+    cat <( fgrep -wf ${WRKDIR}/nonArtifact.variantIDs.list ${OUTDIR}/SV_calls/${COHORT_ID}*.bedpe | fgrep -w ${ID} | cut -f7 ) <( fgrep -wf ${WRKDIR}/nonArtifact.variantIDs.list ${OUTDIR}/SV_calls/${COHORT_ID}*.bed | fgrep -w ${ID} | cut -f4 ) | fgrep -wf - ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed -e 's/_/\t/g' -e 's/,/\t/g'  -e '/^$/d' | cut -f$(seq 1 2 10000 | paste -s -d,) | fgrep -w ${class} | wc -l >> ${WRKDIR}/annotations/${class}_variants_noArt_per_sample.txt
+    cat <( fgrep -wf ${WRKDIR}/nonArtifact.variantIDs.list ${OUTDIR}/SV_calls/${COHORT_ID}*.bedpe | fgrep -w ${ID} | cut -f7 ) <( fgrep -wf ${WRKDIR}/nonArtifact.variantIDs.list ${OUTDIR}/SV_calls/${COHORT_ID}*.bed | fgrep -w ${ID} | cut -f4 ) | fgrep -wf - ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed 's/,/\n/g' | sed '/^$/d' | sort | uniq | sed 's/_/\t/g' | awk -v class=${class} '{ if ($1==class) print $0 }' | wc -l >> ${WRKDIR}/annotations/${class}_genes_noArt_per_sample.txt  
+  done
+done < ${samples_list}
+echo -e "\n\
++------------------+\n\
+| GENE ANNOTATIONS |\n\
++------------------+\n\
+**ALL VARIANTS**
+ => Predicted LoF\n\
+      -Variants: $( cat ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed -e 's/_/\t/g' -e 's/,/\t/g'  -e '/^$/d' | cut -f$(seq 1 2 10000 | paste -s -d,) | fgrep -w LOF | wc -l ) ($( sort -nk1,1 ${WRKDIR}/annotations/LOF_variants_per_sample.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' ) per proband)\n\
+      -Genes: $( cat ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed 's/,/\n/g' | sed '/^$/d' | sort | uniq | sed 's/_/\t/g' | awk '{ if ($1=="LOF") print $0 }' | wc -l ) ($( sort -nk1,1 ${WRKDIR}/annotations/LOF_genes_per_sample.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' ) per proband)\n\
+ => Predicted Whole-Gene Duplication\n\
+      -Variants: $( cat ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed -e 's/_/\t/g' -e 's/,/\t/g'  -e '/^$/d' | cut -f$(seq 1 2 10000 | paste -s -d,) | fgrep -w GOF | wc -l ) ($( sort -nk1,1 ${WRKDIR}/annotations/GOF_variants_per_sample.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' ) per proband)\n\
+      -Genes: $( cat ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed 's/,/\n/g' | sed '/^$/d' | sort | uniq | sed 's/_/\t/g' | awk '{ if ($1=="GOF") print $0 }' | wc -l ) ($( sort -nk1,1 ${WRKDIR}/annotations/GOF_genes_per_sample.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' ) per proband)\n\
+ => Potential LoF\n\
+      -Variants: $( cat ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed -e 's/_/\t/g' -e 's/,/\t/g'  -e '/^$/d' | cut -f$(seq 1 2 10000 | paste -s -d,) | fgrep -w pLOF | wc -l ) ($( sort -nk1,1 ${WRKDIR}/annotations/pLOF_variants_per_sample.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' ) per proband)\n\
+      -Genes: $( cat ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed 's/,/\n/g' | sed '/^$/d' | sort | uniq | sed 's/_/\t/g' | awk '{ if ($1=="pLOF") print $0 }' | wc -l ) ($( sort -nk1,1 ${WRKDIR}/annotations/pLOF_genes_per_sample.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' ) per proband)\n\
+ => Potential Disruption\n\
+      -Variants: $( cat ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed -e 's/_/\t/g' -e 's/,/\t/g'  -e '/^$/d' | cut -f$(seq 1 2 10000 | paste -s -d,) | fgrep -w pD | wc -l ) ($( sort -nk1,1 ${WRKDIR}/annotations/pD_variants_per_sample.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' ) per proband)\n\
+      -Genes: $( cat ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed 's/,/\n/g' | sed '/^$/d' | sort | uniq | sed 's/_/\t/g' | awk '{ if ($1=="pD") print $0 }' | wc -l ) ($( sort -nk1,1 ${WRKDIR}/annotations/pD_genes_per_sample.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' ) per proband)
+**NON-ARTIFACTUAL VARIANTS (VAF ≤ ${polyArt_filter})**
+ => Predicted LoF\n\
+      -Variants: $( fgrep -wf ${WRKDIR}/nonArtifact.variantIDs.list ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed -e 's/_/\t/g' -e 's/,/\t/g'  -e '/^$/d' | cut -f$(seq 1 2 10000 | paste -s -d,) | fgrep -w LOF | wc -l ) ($( sort -nk1,1 ${WRKDIR}/annotations/LOF_variants_noArt_per_sample.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' ) per proband)\n\
+      -Genes: $( fgrep -wf ${WRKDIR}/nonArtifact.variantIDs.list ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed 's/,/\n/g' | sed '/^$/d' | sort | uniq | sed 's/_/\t/g' | awk '{ if ($1=="LOF") print $0 }' | wc -l ) ($( sort -nk1,1 ${WRKDIR}/annotations/LOF_genes_noArt_per_sample.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' ) per proband)\n\
+ => Predicted Whole-Gene Duplication\n\
+      -Variants: $( fgrep -wf ${WRKDIR}/nonArtifact.variantIDs.list ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed -e 's/_/\t/g' -e 's/,/\t/g'  -e '/^$/d' | cut -f$(seq 1 2 10000 | paste -s -d,) | fgrep -w GOF | wc -l ) ($( sort -nk1,1 ${WRKDIR}/annotations/GOF_variants_noArt_per_sample.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' ) per proband)\n\
+      -Genes: $( fgrep -wf ${WRKDIR}/nonArtifact.variantIDs.list ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed 's/,/\n/g' | sed '/^$/d' | sort | uniq | sed 's/_/\t/g' | awk '{ if ($1=="GOF") print $0 }' | wc -l ) ($( sort -nk1,1 ${WRKDIR}/annotations/GOF_genes_noArt_per_sample.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' ) per proband)\n\
+ => Potential LoF\n\
+      -Variants: $( fgrep -wf ${WRKDIR}/nonArtifact.variantIDs.list ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed -e 's/_/\t/g' -e 's/,/\t/g'  -e '/^$/d' | cut -f$(seq 1 2 10000 | paste -s -d,) | fgrep -w pLOF | wc -l ) ($( sort -nk1,1 ${WRKDIR}/annotations/pLOF_variants_noArt_per_sample.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' ) per proband)\n\
+      -Genes: $( fgrep -wf ${WRKDIR}/nonArtifact.variantIDs.list ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed 's/,/\n/g' | sed '/^$/d' | sort | uniq | sed 's/_/\t/g' | awk '{ if ($1=="pLOF") print $0 }' | wc -l ) ($( sort -nk1,1 ${WRKDIR}/annotations/pLOF_genes_noArt_per_sample.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' ) per proband)\n\
+ => Potential Disruption\n\
+      -Variants: $( fgrep -wf ${WRKDIR}/nonArtifact.variantIDs.list ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed -e 's/_/\t/g' -e 's/,/\t/g'  -e '/^$/d' | cut -f$(seq 1 2 10000 | paste -s -d,) | fgrep -w pD | wc -l ) ($( sort -nk1,1 ${WRKDIR}/annotations/pD_variants_noArt_per_sample.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' ) per proband)\n\
+      -Genes: $( fgrep -wf ${WRKDIR}/nonArtifact.variantIDs.list ${OUTDIR}/SV_calls/annotations/* | cut -f6 | sed 's/,/\n/g' | sed '/^$/d' | sort | uniq | sed 's/_/\t/g' | awk '{ if ($1=="pD") print $0 }' | wc -l ) ($( sort -nk1,1 ${WRKDIR}/annotations/pD_genes_noArt_per_sample.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' ) per proband)" >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
 
 
-# Also include:
-# SV sizes (median & IQR per class)
-# gene annotations (num genes LOF/dup/etc per sample, outliers)
