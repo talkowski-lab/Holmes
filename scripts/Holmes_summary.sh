@@ -37,6 +37,14 @@ while read ID bam sex; do
   done
 done < ${samples_list} | paste - - - - - - - - - - - - - - - - - - - >> ${OUTDIR}/QC/cohort/${COHORT_ID}.SV.metrics
 
+#Get SV Sizes
+mkdir ${WRKDIR}/sizes
+for type in deletion duplication; do
+  awk '{ print $3-$2 }' ${OUTDIR}/SV_calls/${COHORT_ID}.${type}.bed | sort -nk1,1 > ${WRKDIR}/sizes/${type}.size
+done
+awk '{ print $3-$2 }' ${OUTDIR}/SV_calls/${COHORT_ID}.insertion.bedpe | sort -nk1,1 > ${WRKDIR}/sizes/insertion_source.size
+awk '{ print $6-$5 }' ${OUTDIR}/SV_calls/${COHORT_ID}.insertion.bedpe | sort -nk1,1 > ${WRKDIR}/sizes/insertion_sink.size
+
 #Write final report to base level $OUTDIR
 echo -e "##################################\n\
 #   HOLMES liWGS-SV RUN REPORT   #\n\
@@ -122,6 +130,7 @@ echo -e "\n\
       -Median per sample (w/ artifacts): $( cut -f10 ${OUTDIR}/QC/cohort/${COHORT_ID}.SV.metrics | sort -nk1,1 | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' )\n\
       -Median per sample (w/o artifacts): $( cut -f19 ${OUTDIR}/QC/cohort/${COHORT_ID}.SV.metrics | sort -nk1,1 | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' )\n\
 " >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
+
 
 # Also include:
 # SV sizes (median & IQR per class)
