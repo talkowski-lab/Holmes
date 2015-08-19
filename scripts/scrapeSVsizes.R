@@ -15,13 +15,35 @@ del <- as.vector(read.table(paste(args[1],"deletion.size",sep=""),header=F)[,1])
 dup <- as.vector(read.table(paste(args[1],"duplication.size",sep=""),header=F)[,1])
 inv <- as.vector(read.table(paste(args[1],"inversion.size",sep=""),header=F)[,1])
 ins_src <- as.vector(read.table(paste(args[1],"insertion_source.size",sep=""),header=F)[,1])
-ins_snk <- as.vector(read.table(paste(args[1],"insertion_sink.size",sep=""),header=F)[,1])
 cpx <- as.vector(read.table(paste(args[1],"complex.size",sep=""),header=F)[,1])
+densities <- lapply(list(del,dup,inv,ins_src,cpx),function(vals){return(density(log10(vals)))})
 
 #Calculate summary
-res <- as.data.frame(t(matrix(unlist(lapply(list(del,dup,inv,ins_src,ins_snk,cpx),summary)),nrow=6)))
-rownames(res) <- c("Deletion","Duplication","Inversion","Insertion (Source)","Insertion (Sink)","Complex (Approx.)")
+res <- as.data.frame(t(matrix(unlist(lapply(list(del,dup,inv,ins_src,cpx),summary)),nrow=6)))
+rownames(res) <- c("Deletion","Duplication","Inversion","Insertion (Source)","Complex (Approx.)")
 colnames(res) <- c("Min","Q1","Med","Mean","Q3","Max")
-write.table(res,args[2],sep="\t",append=T,row.names=F,col.names=F,quote=F)
+write.table(res,args[2],sep="\t",append=T,row.names=T,col.names=T,quote=F)
 
 #Plot
+colors <- c("firebrick","dodgerblue","darkorange","darkorchid4","aquamarine")
+pdf(args[3],height=6,width=8)
+plot(0,0,type="n",
+     xlim=c(3,7),ylim=c(0,1.05*max(unlist(lapply(densities,function(list){return(max(list$y))})))),
+     lwd=2,col="firebrick",
+     xaxs="i",yaxs="i",xaxt="n",
+     ylab="Density",xlab="Variant Size",main="Variant Sizes by Class")
+grid(nx=NULL,ny=NA,col="black",lty=2)
+for(i in 1:5){
+  polygon(x=c(densities[[i]]$x,rev(densities[[i]]$x)),
+          y=c(densities[[i]]$y,rep(0,length(densities[[i]]$y))),
+          border=colors[i],lwd=3,col=adjustcolor(colors[i],alpha=0.1))
+}
+axis(1,at=c(3:7),labels=c("1kb","10kb","100kb","1Mb","10Mb"))
+legend("topright",
+       legend=c("Deletion",
+                "Tandem Duplication",
+                "Simple Inversion",
+                "Insertion",
+                "Complex (Approx.)"),
+       col=colors,lwd=3)
+dev.off()
