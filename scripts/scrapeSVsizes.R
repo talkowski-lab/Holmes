@@ -26,18 +26,18 @@ write.table(res,args[2],sep="\t",append=T,row.names=F,col.names=T,quote=F)
 
 #Plot
 colors <- c("firebrick","dodgerblue","darkorange","darkorchid4","aquamarine")
-pdf(args[3],height=6,width=8)
+pdf(args[3],height=6,width=10)
 plot(0,0,type="n",
      xlim=c(3,7),ylim=c(0,1.05*max(unlist(lapply(densities,function(list){return(max(list$y))})))),
      lwd=2,col="firebrick",
      xaxs="i",yaxs="i",xaxt="n",
      ylab="Density",xlab="Variant Size",main="Variant Sizes by Class")
-grid(nx=NULL,ny=NA,col="black",lty=2)
+grid(nx=NULL,ny=NA,col="gray20",lty=1)
 abline(v=log10(c(seq(2000,9000,by=1000),
                  seq(20000,90000,by=10000),
                  seq(200000,900000,by=100000),
                  seq(2000000,9000000,by=1000000))),
-       col="gray20")
+       col="gray70")
 for(i in 1:5){
   polygon(x=c(densities[[i]]$x,rev(densities[[i]]$x)),
           y=c(densities[[i]]$y,rep(0,length(densities[[i]]$y))),

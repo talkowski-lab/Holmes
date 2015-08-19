@@ -44,6 +44,8 @@ for type in deletion duplication; do
 done
 awk '{ print $3-$2 }' ${OUTDIR}/SV_calls/${COHORT_ID}.insertion.bedpe | sort -nk1,1 > ${WRKDIR}/sizes/insertion_source.size
 awk '{ print $6-$5 }' ${OUTDIR}/SV_calls/${COHORT_ID}.insertion.bedpe | sort -nk1,1 > ${WRKDIR}/sizes/insertion_sink.size
+awk '{ printf "%.0f\n", (($6+$3)/2)-(($2+$5)/2) }'  ${OUTDIR}/SV_calls/${COHORT_ID}.inversion.bedpe | sort -nk1,1 > ${WRKDIR}/sizes/inversion.size #take average of plus and minus bps for inversions
+awk '{ print $3-$2 }' ${OUTDIR}/SV_calls/${COHORT_ID}.complex.bed | sort -nk1,1 > ${WRKDIR}/sizes/complex.size
 
 #Write final report to base level $OUTDIR
 echo -e "##################################\n\
@@ -129,7 +131,11 @@ echo -e "\n\
       -Total in cohort: $( sed '1d' ${OUTDIR}/SV_calls/${COHORT_ID}.unresolved.bed | wc -l ) ($( awk -v max=${maxCount} '{ if ($6>max) print $0 }' ${OUTDIR}/SV_calls/${COHORT_ID}.unresolved.bed | fgrep -v "#" | wc -l ) putative artifacts)\n\
       -Median per sample (w/ artifacts): $( cut -f10 ${OUTDIR}/QC/cohort/${COHORT_ID}.SV.metrics | sort -nk1,1 | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' )\n\
       -Median per sample (w/o artifacts): $( cut -f19 ${OUTDIR}/QC/cohort/${COHORT_ID}.SV.metrics | sort -nk1,1 | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' )\n\
-" >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
+\n\n\
++----------+\n\
+| SV SIZES |\n\
++----------+" >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
+Rscript ${liWGS_SV}/scripts/scrapeSVsizes.R ${WRKDIR}/sizes/ ${OUTDIR}/${COHORT_ID}.run_summary.txt ${OUTDIR}/plots/${COHORT_ID}.SVsizes.pdf
 
 
 # Also include:
