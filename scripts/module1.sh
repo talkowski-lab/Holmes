@@ -55,7 +55,6 @@ while read ID bam sex; do
   mv ${WRKDIR}/${COHORT_ID}.WGSdosage_ObsVsExp.bed2 ${WRKDIR}/${COHORT_ID}.WGSdosage_ObsVsExp.bed
 done < <( sed '1d' ${samples_list} )
 cat <( echo -e "chr\tstart\tend\t$( cut -f1 ${samples_list} | paste -s )" ) ${WRKDIR}/${COHORT_ID}.WGSdosage_ObsVsExp.bed > ${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsExp.bed
-Rscript -e "x <- read.table(\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsExp.bed\",header=T); x[,4:ncol(x)] <- apply(x[,4:ncol(x)],"
 Rscript -e "x <- read.table(\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsExp.bed\",header=T); x[,4:ncol(x)] <- t(abs(apply(x[,4:ncol(x)],1,scale))); write.table(x,\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_absoluteZscores.bed\",row.names=F,col.names=T,sep=\"\\t\",quote=F)"
 
 #Collect summary for each sample
