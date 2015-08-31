@@ -89,6 +89,6 @@ fi
 else
  echo -e "\n\nChromatin Dosage Anomaly Diagnostic Test\n\nContact: Ryan Collins (rcollins@chgr.mgh.harvard.edu)\n\n"
  echo "Usage:"
- echo "  WGScheckDosage.sh [path/to/bam] [ID] [h37/hg19] [summary/genome] [OUTDIR]"
+ echo "  WGScheckDosage.sh [path/to/bam] [ID] [h37/hg19] [summary/genome/both] [OUTDIR]"
  echo ""
 fi
