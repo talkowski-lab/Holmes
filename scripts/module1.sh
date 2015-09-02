@@ -59,7 +59,7 @@ Rscript -e "x <- read.table(\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsEx
 
 #Collect summary for each sample
 echo -e "##liWGS-SV PIPELINE COHORT QC\n##RUN DATE: $( echo $(date) | awk '{ print $1, $2, $3, $NF }' )\n\
-#ID\tTotal_Pairs\tRead_Aln_Rate\tPair_Aln_Rate\tProper\tChimera\tRead_Dup\tPair_Dup\tMedian_Insert\tInsert_MAD\tHap_Phys_Cov\tHap_Nuc_Cov\tReported_Sex\tObserved_Sex\tAbs_Dosage_ZScore" > ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics
+#ID\tTotal_Reads\tRead_Aln_Rate\tPair_Aln_Rate\tProper\tChimera\tRead_Dup\tPair_Dup\tMedian_Insert\tInsert_MAD\tHap_Phys_Cov\tHap_Nuc_Cov\tReported_Sex\tObserved_Sex\tAbs_Dosage_ZScore" > ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics
 while read ID bam sex; do
   total=$( grep '^PAIR' ${OUTDIR}/QC/sample/${ID}/${ID}.alignment_summary_metrics | awk '{ print $2 }' ) #total reads in BAM
   rd_aln=$( grep '^PAIR' ${OUTDIR}/QC/sample/${ID}/${ID}.alignment_summary_metrics | awk '{ print $6 }' ) #reads aligned

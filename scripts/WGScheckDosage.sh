@@ -4,9 +4,6 @@
 #August 2015
 #Contact: rcollins@chgr.mgh.harvard.edu
 
-#Source params file
-. ${params}
-
 #Read Input
 bam=$1     #full path to indexed bam file
 ID=$2      #string, ID for library
