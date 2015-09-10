@@ -144,10 +144,11 @@ while read clusterlist chr minp maxp minm maxm class_old trash; do
   min=$( echo -e "${minp}\n${maxp}\n${minm}\n${maxm}" | fgrep -v "NA" | sort -nk1,1 | head -n1 )
   max=$( echo -e "${minp}\n${maxp}\n${minm}\n${maxm}" | fgrep -v "NA" | sort -nk1,1 | tail -n1 )
   if [ $( echo ${clusterlist} | sed 's/,/\n/g' | wc -l ) -gt 1 ]; then
-    echo ${clusterlist} | sed 's/,/\n/g' > ${clusters}
+    clusters=$( echo ${clusterlist} | sed 's/,/\n/g' )
     samples=$( fgrep -wf ${clusters} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f20 | tr -d "[]" | sed 's/,/\n/g' | sort | uniq | paste -s -d, )
     observations=$( fgrep -wf ${clusters} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f20 | tr -d "[]" | sed 's/,/\n/g' | sort | uniq | wc -l )
   else
+    clusters=$( echo ${clusterlist} | sed 's/,/\n/g' )
     samples=$( fgrep -w ${clusterlist} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f20 | tr -d "[]" )
     observations=$( fgrep -w ${clusterlist} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f19 )
   fi
