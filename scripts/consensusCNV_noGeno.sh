@@ -74,4 +74,4 @@ bedtools intersect -v -r -f 0.51 -a ${TMPDIR}/${ID}_classifier.${cnvtype}.bed -b
 cat ${TMPDIR}/${ID}.${cnvtype}.A.bed ${TMPDIR}/${ID}.${cnvtype}.B.bed ${TMPDIR}/${ID}.${cnvtype}.C.bed ${TMPDIR}/${ID}.${cnvtype}.D.bed ${TMPDIR}/${ID}.${cnvtype}.E.bed | sed -e 's/^X/23/g' -e 's/^Y/24/g' | sort -nk1,1 -k2,2n | sed -e 's/^23/X/g' -e 's/^24/Y/g' > ${WRKDIR}/${ID}/${ID}.consensus.${cnvtype}.bed
 
 ##CLEAN UP
-rm ${TMPDIR}/${ID}.${cnvtype}.*.bed* ${BL} ${DNAcopy} ${cnMOPS_m} ${premerge}
+rm ${TMPDIR}/${ID}.${cnvtype}.*.bed ${BL} ${DNAcopy} ${cnMOPS_m} ${premerge}
