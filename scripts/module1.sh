@@ -59,13 +59,13 @@ Rscript -e "x <- read.table(\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsEx
 
 #Collect summary for each sample
 echo -e "##liWGS-SV PIPELINE COHORT QC\n##RUN DATE: $( echo $(date) | awk '{ print $1, $2, $3, $NF }' )\n\
-#ID\tTotal_Reads\tRead_Aln_Rate\tPair_Aln_Rate\tProper\tChimera\tRead_Dup\tPair_Dup\tMedian_Insert\tInsert_MAD\tHap_Phys_Cov\tHap_Nuc_Cov\tReported_Sex\tObserved_Sex\tAbs_Dosage_ZScore" > ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics
+#ID\tTotal_Pairs\tRead_Aln_Rate\tPair_Aln_Rate\tProper\tChimera\tRead_Dup\tPair_Dup\tMedian_Insert\tInsert_MAD\tHap_Phys_Cov\tHap_Nuc_Cov\tReported_Sex\tObserved_Sex\tAbs_Dosage_ZScore" > ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics
 while read ID bam sex; do
-  total=$( grep '^PAIR' ${OUTDIR}/QC/sample/${ID}/${ID}.alignment_summary_metrics | awk '{ print $2 }' ) #total reads in BAM
+  total=$( grep '^FIRST_OF_PAIR' ${OUTDIR}/QC/sample/${ID}/${ID}.alignment_summary_metrics | awk '{ print $2 }' ) #total reads in BAM
   rd_aln=$( grep '^PAIR' ${OUTDIR}/QC/sample/${ID}/${ID}.alignment_summary_metrics | awk '{ print $6 }' ) #reads aligned
-  rd_aln_rt=$( echo "scale=4;(( ${rd_aln}/${total} ))" | bc ) #read aln rate
+  rd_aln_rt=$( echo "scale=4;(( ${rd_aln}/(2*${total}) ))" | bc ) #read aln rate
   pr_aln=$( grep '^PAIR' ${OUTDIR}/QC/sample/${ID}/${ID}.alignment_summary_metrics | awk '{ print $17 }' ) #reads aligned in pairs
-  pr_aln_rt=$( echo "scale=4;(( ${pr_aln}/${total} ))" | bc ) #pairwise aln rate
+  pr_aln_rt=$( echo "scale=4;(( ${pr_aln}/(2*${total}) ))" | bc ) #pairwise aln rate
   prop=$( echo "scale=4;(( $( fgrep Proper ${OUTDIR}/QC/sample/${ID}/${ID}.stats | awk '{ print $3 }' | tr -d "()%" )/100 ))" | bc )
   rd_dup=$( echo "scale=4;(( $( grep '^Duplicates' ${OUTDIR}/QC/sample/${ID}/${ID}.stats | awk '{ print $3 }' | tr -d "()%")/100 ))" | bc ) #read dup rate
   pr_dup=$( grep -A1 '^LIBRARY' ${OUTDIR}/QC/sample/${ID}/${ID}.complexity | tail -n1 | awk '{ print $(NF-1) }' ) #pair dup rate
