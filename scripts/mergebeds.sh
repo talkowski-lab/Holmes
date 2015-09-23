@@ -10,7 +10,7 @@ in_list=$1             #input list. Format: sample ID <TAB> full/path/to/bedfile
 cluster_dist=$2        #maximum distance between breakpoints for concordance, in bases. 10kb for Eco with cnMOPS
 contig=$3              #Contig to merge
 name=$4                #output name. Will be appended to output file
-OUTDIR=$4              #output directory. Will write to ${OUTDIR}/${name}.merged.bed
+OUTDIR=$5              #output directory. Will write to ${OUTDIR}/${name}.merged.bed
 
 #9-col bed output format (tab-delimmed):
 #1) chr
