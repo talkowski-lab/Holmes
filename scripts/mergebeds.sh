@@ -41,7 +41,7 @@ cut -f1 ${in_list} > ${samp_list}
 
 #Clean sample beds to same format
 while read ID bed; do
-  paste <( awk -v OFS="\t" -v contig=${contig} -v ID=${ID} '{ if ($1==contig) print $1, $2, $3, ID, ID"_"NR }' ${bed} ) <( cut --complement -f1-3 ${bed} | sed 's/\t/\//g' ) > ${TMPDIR}/${ID}.bed
+  paste <( awk -v OFS="\t" -v contig=${contig} -v ID=${ID} '{ if ($1==contig) print $1, $2, $3, ID, ID"_"NR }' ${bed} ) <( awk -v contig=${contig} '{ if ($1==contig) print $0 }' ${bed} | cut --complement -f1-3  | sed 's/\t/\//g' ) > ${TMPDIR}/${ID}.bed
 done < ${in_list}
 
 #cat & sort master bed
