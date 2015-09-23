@@ -33,7 +33,10 @@ if [ $( cat ${samples_list} | wc -l ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE
     echo -e "${ID}_classifier_del\t${WRKDIR}/${ID}/classifier.dels.bed\n${ID}_cnMOPS_del\t${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed\n${ID}_DNAcopy_del\t${WRKDIR}/${ID}/DNAcopy.dels.bed" >> ${WRKDIR}/consensusCNV/CNVs_to_merge.list
     echo -e "${ID}_classifier_dup\t${WRKDIR}/${ID}/classifier.dups.bed\n${ID}_cnMOPS_dup\t${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed\n${ID}_DNAcopy_dup\t${WRKDIR}/${ID}/DNAcopy.dups.bed" >> ${WRKDIR}/consensusCNV/CNVs_to_merge.list
   done < ${samples_list}
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/mergeCNVinterval.log -e ${OUTDIR}/logs/mergeCNVinterval.log -J ${COHORT_ID}_MERGE "${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensusCNV/CNVs_to_merge.list 10000 ${COHORT_ID}_CNV_intervals ${WRKDIR}/consensusCNV/"
+  #Merge all CNVs to list of nonredundant intervals
+  for contig in $( seq 1 22 ) X Y; do
+    bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/mergeCNVinterval.log -e ${OUTDIR}/logs/mergeCNVinterval.log -J ${COHORT_ID}_MERGE "${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensusCNV/CNVs_to_merge.list 10000 ${contig} ${COHORT_ID}_CNV_intervals ${WRKDIR}/consensusCNV/"
+  done
 
   #Gate until complete; 20 sec check; 5 min report
   GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MERGE" | wc -l )
@@ -47,6 +50,9 @@ if [ $( cat ${samples_list} | wc -l ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE
       GATEwait=0
     fi
   done
+
+  #Cat merged CNV intervals
+  cat ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.*.bed >${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed
 
   #Set rare edge cases where overclustering caused negative size to largest insert in cohort
   scaler=$( fgrep -v "#" ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics | cut -f9 | sort -nrk1,1 | head -n1 )

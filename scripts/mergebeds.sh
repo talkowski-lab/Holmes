@@ -8,7 +8,8 @@
 #Read input
 in_list=$1             #input list. Format: sample ID <TAB> full/path/to/bedfile/to/be/merged
 cluster_dist=$2        #maximum distance between breakpoints for concordance, in bases. 10kb for Eco with cnMOPS
-name=$3                #output name. Will be appended to output file
+contig=$3              #Contig to merge
+name=$4                #output name. Will be appended to output file
 OUTDIR=$4              #output directory. Will write to ${OUTDIR}/${name}.merged.bed
 
 #9-col bed output format (tab-delimmed):
@@ -40,7 +41,7 @@ cut -f1 ${in_list} > ${samp_list}
 
 #Clean sample beds to same format
 while read ID bed; do
-  paste <( awk -v OFS="\t" -v ID=${ID} '{ print $1, $2, $3, ID, ID"_"NR }' ${bed} ) <( cut --complement -f1-3 ${bed} | sed 's/\t/\//g' ) > ${TMPDIR}/${ID}.bed
+  paste <( awk -v OFS="\t" -v contig=${contig} -v ID=${ID} '{ if ($1==contig) print $1, $2, $3, ID, ID"_"NR }' ${bed} ) <( cut --complement -f1-3 ${bed} | sed 's/\t/\//g' ) > ${TMPDIR}/${ID}.bed
 done < ${in_list}
 
 #cat & sort master bed
@@ -84,7 +85,7 @@ while read chr start end ID eID info; do
 done < ${TMPDIR}/all.bed | paste - - - - - - - - - > ${prefinal}
 
 #Print final output
-awk -v OFS="\t" -v name=${name} '{ print $1, $2, $3, name"_"NR, $5, $6, $7, $8, $9 }' ${prefinal} | sort -nk1,1 -nk2,2 -nk3,3 | sed -e 's/^23/X/g' -e 's/^24/Y/g' > ${OUTDIR}/${name}.merged.bed
+awk -v OFS="\t" -v name=${name} '{ print $1, $2, $3, name"_"NR, $5, $6, $7, $8, $9 }' ${prefinal} | sort -nk1,1 -nk2,2 -nk3,3 | sed -e 's/^23/X/g' -e 's/^24/Y/g' > ${OUTDIR}/${name}.merged.${contig}.bed
 
 #Clean up
 rm -rf ${TMPDIR}
