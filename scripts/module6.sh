@@ -52,7 +52,7 @@ if [ $( cat ${samples_list} | wc -l ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE
   done
 
   #Cat merged CNV intervals, and set any intervals < 3kb to 3kb to ensure genotyping stability
-  cat ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.*.bed | awk -v OFS="\t" '{ if ($3-$2<3000) printf "%s\t%u\t%u\t%s\t%u\t%u\t%s\t%s\n", $1, (($2+$3)/2)-1500, (($2+$3)/2)+1500, $4, 1500, 1500, $7, $8, $9; else print $0 }' | sed -e 's/^X/23/g' -e 's/^Y/24/g' | sort -nk1,1 -nk2,2 | sed -e 's/^23/X/g' -e 's/^24/Y/g' > ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed
+  cat ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.*.bed | awk -v OFS="\t" '{ if ($3-$2<3000) printf "%s\t%u\t%u\t%s\t%u\t%u\t%s\t%s\t%s\n", $1, (($2+$3)/2)-1500, (($2+$3)/2)+1500, $4, 1500, 1500, $7, $8, $9; else print $0 }' | sed -e 's/^X/23/g' -e 's/^Y/24/g' | sort -nk1,1 -nk2,2 | sed -e 's/^23/X/g' -e 's/^24/Y/g' > ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed
 
   #Set rare edge cases where overclustering caused negative size to largest insert in cohort
   scaler=$( fgrep -v "#" ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics | cut -f9 | sort -nrk1,1 | head -n1 )
