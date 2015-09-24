@@ -85,7 +85,7 @@ while read chr start end ID eID info; do
 done < ${TMPDIR}/all.bed | paste - - - - - - - - - > ${prefinal}
 
 #Print final output
-awk -v OFS="\t" -v name=${name} '{ print $1, $2, $3, name"_"NR, $5, $6, $7, $8, $9 }' ${prefinal} | sort -nk1,1 -nk2,2 -nk3,3 | sed -e 's/^23/X/g' -e 's/^24/Y/g' > ${OUTDIR}/${name}.merged.${contig}.bed
+awk -v OFS="\t" -v contig=${contig} -v name=${name} '{ print $1, $2, $3, name"_"contig"_"NR, $5, $6, $7, $8, $9 }' ${prefinal} | sort -nk1,1 -nk2,2 -nk3,3 | sed -e 's/^23/X/g' -e 's/^24/Y/g' > ${OUTDIR}/${name}.merged.${contig}.bed
 
 #Clean up
 rm -rf ${TMPDIR}

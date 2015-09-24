@@ -51,8 +51,8 @@ if [ $( cat ${samples_list} | wc -l ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE
     fi
   done
 
-  #Cat merged CNV intervals
-  cat ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.*.bed >${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed
+  #Cat merged CNV intervals, and set any intervals < 3kb to 3kb to ensure genotyping stability
+  cat ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.*.bed | awk -v OFS="\t" '{ if ($3-$2<3000) printf "%s\t%u\t%u\t%s\t%u\t%u\t%s\t%s\n", $1, (($2+$3)/2)-1500, (($2+$3)/2)+1500, $4, 1500, 1500, $7, $8, $9; else print $0 }' | sed -e 's/^X/23/g' -e 's/^Y/24/g' | sort -nk1,1 -nk2,2 | sed -e 's/^23/X/g' -e 's/^24/Y/g' > ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed
 
   #Set rare edge cases where overclustering caused negative size to largest insert in cohort
   scaler=$( fgrep -v "#" ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics | cut -f9 | sort -nrk1,1 | head -n1 )
@@ -60,7 +60,7 @@ if [ $( cat ${samples_list} | wc -l ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE
   mv ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed2 ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed
 
   #Genotype all consensus intervals
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV_batch.R ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.genotypes.bed"
+  bsub -q big -sla miket_sc -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log -J ${COHORT_ID}_genotyping -R 'rusage[mem=30000]' -M 30000 -v 40000 "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV_batch.R ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.genotypes.bed"
 
   #Gate until complete; 20 sec check; 5 min report
   GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_genotyping" | wc -l )
