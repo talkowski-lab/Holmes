@@ -63,7 +63,9 @@ if [ $( cat ${samples_list} | wc -l ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE
   done
 
   #Genotype all consensus intervals
-  for contig in $( seq 1 22 ) X Y; do
+  #DEV NOTE: PRESENTLY EXCLUDING ALLOSOMES DUE TO MIXTURE OF SEXES
+  #CAN SPLIT BY SEX TO GENOTYPE HERE; NEED TO IMPLEMENT
+  for contig in $( seq 1 22 ); do
     bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV_batch.R ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.${contig}.bed ${WRKDIR}/consensusCNV/${COHORT_ID}.physical.cov_matrix.${contig}.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.${contig}.genotypes.bed"
   done
 
@@ -81,7 +83,7 @@ if [ $( cat ${samples_list} | wc -l ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE
   done
 
   #Cat all genotype outputs
-  for contig in $( seq 1 22 ) X Y; do
+  for contig in $( seq 1 22 ); do
     cat ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.${contig}.genotypes.bed >> ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.genotypes.bed
   done
 
