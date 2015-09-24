@@ -105,7 +105,7 @@ genotypeCov <- function(chr,start,end,            #region to be genotyped
   cov1 <- cov[which(cov$Start<=Rend & cov$Stop>=(Rstart-1) & cov$Chr==chr),]
   
   #Replace zero values with 1 for handling normalization
-  cov1[cov1==0]<-1
+  cov1[cov1==0 | is.na(cov1)]<-1
   
   #Rebins values
   if(compression>1){

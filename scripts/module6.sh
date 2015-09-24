@@ -51,16 +51,21 @@ if [ $( cat ${samples_list} | wc -l ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE
     fi
   done
 
-  #Cat merged CNV intervals, and set any intervals < 3kb to 3kb to ensure genotyping stability
-  cat ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.*.bed | awk -v OFS="\t" '{ if ($3-$2<3000) printf "%s\t%u\t%u\t%s\t%u\t%u\t%s\t%s\t%s\n", $1, (($2+$3)/2)-1500, (($2+$3)/2)+1500, $4, 1500, 1500, $7, $8, $9; else print $0 }' | sed -e 's/^X/23/g' -e 's/^Y/24/g' | sort -nk1,1 -nk2,2 | sed -e 's/^23/X/g' -e 's/^24/Y/g' > ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed
-
-  #Set rare edge cases where overclustering caused negative size to largest insert in cohort
+  #Cat merged CNV intervals, and set any intervals < largest insert in cohort to largest insert in cohort to ensure genotyping stability
   scaler=$( fgrep -v "#" ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics | cut -f9 | sort -nrk1,1 | head -n1 )
-  awk -v scaler=${scaler} -v OFS="\t" '{ if ($3-$2>0) print $0; else print $1, (($3+$2)/2)-(scaler/2), (($3+$2)/2)+(scaler/2), $4, $5, $6, $7, $8, $9 }' ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed > ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed2
-  mv ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed2 ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed
+  cat ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.*.bed | awk -v scaler=${scaler} -v OFS="\t" '{ if ($3-$2<scaler) printf "%s\t%u\t%u\t%s\t%u\t%u\t%s\t%s\t%s\n", $1, (($2+$3)/2)-(scaler/2), (($2+$3)/2)+(scaler/2), $4, (scaler/2), (scaler/2), $7, $8, $9; else print $0 }' | sed -e 's/^X/23/g' -e 's/^Y/24/g' | sort -nk1,1 -nk2,2 | sed -e 's/^23/X/g' -e 's/^24/Y/g' > ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed
+
+  #Re-split merged CNV intervals and input coverage by contig
+  for contig in $( seq 1 22 ) X Y; do
+    awk -v OFS="\t" -v contig=${contig} '{ if ($1==contig) print $0 }' ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed > ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.${contig}.bed
+    head -n1 ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed > ${WRKDIR}/consensusCNV/${COHORT_ID}.physical.cov_matrix.${contig}.bed
+    awk -v OFS="\t" -v contig=${contig} '{ if ($1==contig) print $0 }' ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed >> ${WRKDIR}/consensusCNV/${COHORT_ID}.physical.cov_matrix.${contig}.bed
+  done
 
   #Genotype all consensus intervals
-  bsub -q big -sla miket_sc -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log -J ${COHORT_ID}_genotyping -R 'rusage[mem=30000]' -M 30000 -v 40000 "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV_batch.R ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.bed ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.genotypes.bed"
+  for contig in $( seq 1 22 ) X Y; do
+    bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log -J ${COHORT_ID}_genotyping "module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV_batch.R ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.${contig}.bed ${WRKDIR}/consensusCNV/${COHORT_ID}.physical.cov_matrix.${contig}.bed ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.${contig}.genotypes.bed"
+  done
 
   #Gate until complete; 20 sec check; 5 min report
   GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_genotyping" | wc -l )
@@ -73,6 +78,11 @@ if [ $( cat ${samples_list} | wc -l ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE
       echo -e "STATUS [$(date)]: Waiting on ${GATEcount} jobs..."
       GATEwait=0
     fi
+  done
+
+  #Cat all genotype outputs
+  for contig in $( seq 1 22 ) X Y; do
+    cat ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.${contig}.genotypes.bed >> ${WRKDIR}/consensusCNV/${COHORT_ID}_CNV_intervals.merged.genotypes.bed
   done
 
   #Split genotype beds per sample
