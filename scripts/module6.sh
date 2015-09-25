@@ -131,8 +131,8 @@ while read ID bam sex; do
   echo -e "${ID}\t${WRKDIR}/${ID}/${ID}.consensus.del.bed" >> ${WRKDIR}/consensus_del_to_merge.list
   echo -e "${ID}\t${WRKDIR}/${ID}/${ID}.consensus.dup.bed" >> ${WRKDIR}/consensus_dup_to_merge.list
 done < ${samples_list}
-${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensus_del_to_merge.list 10000 ${COHORT_ID}_consensus_dels ${WRKDIR}/consensusCNV/
-${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/consensus_dup_to_merge.list 10000 ${COHORT_ID}_consensus_dups ${WRKDIR}/consensusCNV/
+${liWGS_SV}/scripts/mergebeds_allContigs.sh ${WRKDIR}/consensus_del_to_merge.list 10000 ${COHORT_ID}_consensus_dels ${WRKDIR}/consensusCNV/
+${liWGS_SV}/scripts/mergebeds_allContigs.sh ${WRKDIR}/consensus_dup_to_merge.list 10000 ${COHORT_ID}_consensus_dups ${WRKDIR}/consensusCNV/
 
 ##Next step excluded until genotyping script becomes more reliable; will be a good idea to genotype these sites in everyone eventually but genotyping script not accurate enough yet
 # #Genotype merged consensus CNVs
