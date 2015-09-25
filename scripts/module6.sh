@@ -107,18 +107,18 @@ else
   done < ${samples_list}
 fi
 
-  #Gate until complete; 20 sec check; 5 min report
+#Gate until complete; 20 sec check; 5 min report
+GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_consensusCNV" | wc -l )
+GATEwait=0
+until [[ $GATEcount == 0 ]]; do
+  sleep 20s
   GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_consensusCNV" | wc -l )
-  GATEwait=0
-  until [[ $GATEcount == 0 ]]; do
-    sleep 20s
-    GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_consensusCNV" | wc -l )
-    GATEwait=$[${GATEwait} +1]
-    if [[ $GATEwait == 15 ]]; then
-      echo -e "STATUS [$(date)]: Waiting on ${GATEcount} jobs..."
-      GATEwait=0
-    fi
-  done
+  GATEwait=$[${GATEwait} +1]
+  if [[ $GATEwait == 15 ]]; then
+    echo -e "STATUS [$(date)]: Waiting on ${GATEcount} jobs..."
+    GATEwait=0
+  fi
+done
 
 #Merge all consensus CNVs
 if [ -e ${WRKDIR}/consensus_del_to_merge.list ]; then
