@@ -86,10 +86,10 @@ while read chrA minA maxA chrB minB maxB cluster class; do
 done < ${pool} >> ${agg}
 fgrep Insertion ${WRKDIR}/classifier/clusterfix/newCoords/complex_classifications.list | fgrep -v DupFlanked > ${pool}
 while read chrA minA maxA chrB minB maxB cxcluster class flag; do
-  clusters=$( fgrep -w ${cxcluster} ${WRKDIR}/classifier/clusterfix/newCoords/${COHORT_ID}.putative_complex_sites.list | sed 's/\t/,/g' | sed 's/,$//g' )
-  samples=$( while read cluster; do fgrep -w ${cluster} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f20 | tr -d "[]" | sed 's/,/\n/g'; done < <( echo ${clusters} | sed 's/,/\n/g' ) | sort | uniq | paste -s -d, )
+  clusterlist=$( fgrep -w ${cxcluster} ${WRKDIR}/classifier/clusterfix/newCoords/${COHORT_ID}.putative_complex_sites.list | sed 's/\t/,/g' | sed 's/,$//g' )
+  samples=$( while read cluster; do fgrep -w ${cluster} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f20 | tr -d "[]" | sed 's/,/\n/g'; done < <( echo ${clusterlist} | sed 's/,/\n/g' ) | sort | uniq | paste -s -d, )
   observations=$( echo ${samples} | sed 's/,/\n/g' | wc -l )
-  echo -e "${chrA}\t${minA}\t${maxA}\t${chrB}\t${minB}\t${maxB}\t${COHORT_ID}_insertion\t+\t+\t${observations}\t[${samples}]\t[${clusters}]"
+  echo -e "${chrA}\t${minA}\t${maxA}\t${chrB}\t${minB}\t${maxB}\t${COHORT_ID}_insertion\t+\t+\t${observations}\t[${samples}]\t[${clusterlist}]"
 done < ${pool} >> ${agg}
 sort -nk1,1 -k4,4n -k2,2n -k5,5n ${agg} | awk -v OFS="\t" '{ print $1, $2, $3, $4, $5, $6, $7"_"NR, $8, $9, $10, $11, $12 }' >> ${WRKDIR}/final_variants/${COHORT_ID}.insertion.bedpe
 
@@ -144,20 +144,20 @@ while read clusterlist chr minp maxp minm maxm class_old trash; do
   min=$( echo -e "${minp}\n${maxp}\n${minm}\n${maxm}" | fgrep -v "NA" | sort -nk1,1 | head -n1 )
   max=$( echo -e "${minp}\n${maxp}\n${minm}\n${maxm}" | fgrep -v "NA" | sort -nk1,1 | tail -n1 )
   if [ $( echo ${clusterlist} | sed 's/,/\n/g' | wc -l ) -gt 1 ]; then
-    clusters=$( echo ${clusterlist} | sed 's/,/\n/g' )
+    echo ${clusterlist} | sed 's/,/\n/g' > ${clusters}
     samples=$( fgrep -wf ${clusters} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f20 | tr -d "[]" | sed 's/,/\n/g' | sort | uniq | paste -s -d, )
     observations=$( fgrep -wf ${clusters} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f20 | tr -d "[]" | sed 's/,/\n/g' | sort | uniq | wc -l )
   else
-    clusters=$( echo ${clusterlist} | sed 's/,/\n/g' )
-    samples=$( fgrep -w ${clusterlist} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f20 | tr -d "[]" )
-    observations=$( fgrep -w ${clusterlist} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f19 )
+    echo ${clusterlist} | sed 's/,/\n/g' > ${clusters}
+    samples=$( fgrep -wf ${clusters} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f20 | tr -d "[]" )
+    observations=$( fgrep -wf ${clusters} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f19 )
   fi
-  echo -e "${chr}\t${min}\t${max}\t${COHORT_ID}_complexSV\t${class}\t${observations}\t[${samples}]\t[${clusters}]"
+  echo -e "${chr}\t${min}\t${max}\t${COHORT_ID}_complexSV\t${class}\t${observations}\t[${samples}]\t[${clusterlist}]"
 done < ${pool} > ${agg}
 grep -e 'DupFlankedInsertion\|Inversion_FlankingDel3\|Inversion_FlankingDel5' ${WRKDIR}/classifier/clusterfix/newCoords/complex_classifications.list > ${pool}
 while read chrA minA maxA chrB minB maxB cxcluster class_old flag; do
-  clusters=$( fgrep -w ${cxcluster} ${WRKDIR}/classifier/clusterfix/newCoords/${COHORT_ID}.putative_complex_sites.list | sed 's/\t/,/g' | sed 's/,$//g' )
-  samples=$( while read cluster; do fgrep -w ${cluster} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f20 | tr -d "[]" | sed 's/,/\n/g'; done < <( echo ${clusters} | sed 's/,/\n/g' ) | sort | uniq | paste -s -d, )
+  clusterlist=$( fgrep -w ${cxcluster} ${WRKDIR}/classifier/clusterfix/newCoords/${COHORT_ID}.putative_complex_sites.list | sed 's/\t/,/g' | sed 's/,$//g' )
+  samples=$( while read cluster; do fgrep -w ${cluster} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f20 | tr -d "[]" | sed 's/,/\n/g'; done < <( echo ${clusterlist} | sed 's/,/\n/g' ) | sort | uniq | paste -s -d, )
   observations=$( echo ${samples} | sed 's/,/\n/g' | wc -l )
   if [ ${chrA} == ${chrB} ]; then
     min=$( echo -e "${minA}\n${maxA}\n${minB}\n${maxB}" | fgrep -v "NA" | sort -nk1,1 | head -n1 )
@@ -173,7 +173,7 @@ while read chrA minA maxA chrB minB maxB cxcluster class_old flag; do
         class="complexDUPins"
         ;;
     esac
-    echo -e "${chrA}\t${min}\t${max}\t${COHORT_ID}_complexSV\t${class}\t${observations}\t[${samples}]\t[${clusters}]"
+    echo -e "${chrA}\t${min}\t${max}\t${COHORT_ID}_complexSV\t${class}\t${observations}\t[${samples}]\t[${clusterlist}]"
   else
     case ${class_old} in
       Inversion_FlankingDel3)
@@ -186,7 +186,7 @@ while read chrA minA maxA chrB minB maxB cxcluster class_old flag; do
         class="complexDUPins"
         ;;
     esac
-    echo -e "Multiple\t.\t.\t${COHORT_ID}_complexSV\t${class}\t${observations}\t[${samples}]\t[${clusters}]"
+    echo -e "Multiple\t.\t.\t${COHORT_ID}_complexSV\t${class}\t${observations}\t[${samples}]\t[${clusterlist}]"
   fi
 done < ${pool} >> ${agg}
 sort -nk1,1 -k4,4n -k2,2n -k5,5n ${agg} | awk -v OFS="\t" '{ print $1, $2, $3, $4"_"NR, $5, $6, $7, $8 }' >> ${WRKDIR}/final_variants/${COHORT_ID}.complex.bed
@@ -195,31 +195,31 @@ sort -nk1,1 -k4,4n -k2,2n -k5,5n ${agg} | awk -v OFS="\t" '{ print $1, $2, $3, $
 echo -e "#chr\tmin\tmax\tID\tobservations\toutput_class\tsamples\tclusters" > ${WRKDIR}/final_variants/${COHORT_ID}.unresolved.bed
 grep -e 'Unresolved\|SKIP_MissingBPs' ${WRKDIR}/classifier/clusterfix/newCoords/complex_classifications.list > ${pool}
 while read chrA minA maxA chrB minB maxB cxcluster class_old flag; do
-  clusters=$( fgrep -w ${cxcluster} ${WRKDIR}/classifier/clusterfix/newCoords/${COHORT_ID}.putative_complex_sites.list | sed 's/\t/,/g' | sed 's/,$//g' )
-  samples=$( while read cluster; do fgrep -w ${cluster} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f20 | tr -d "[]" | sed 's/,/\n/g'; done < <( echo ${clusters} | sed 's/,/\n/g' ) | sort | uniq | paste -s -d, )
+  clusterlist=$( fgrep -w ${cxcluster} ${WRKDIR}/classifier/clusterfix/newCoords/${COHORT_ID}.putative_complex_sites.list | sed 's/\t/,/g' | sed 's/,$//g' )
+  samples=$( while read cluster; do fgrep -w ${cluster} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f20 | tr -d "[]" | sed 's/,/\n/g'; done < <( echo ${clusterlist} | sed 's/,/\n/g' ) | sort | uniq | paste -s -d, )
   observations=$( echo ${samples} | sed 's/,/\n/g' | wc -l )
-  nchrs=$( echo -e "${clusters}" | sed 's/,/\n/g' | fgrep -wf - ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | sed 's/\:/\t/g' | awk -v OFS="\n" '{ print $2, $5 }' | sort | uniq | wc -l )
+  nchrs=$( echo -e "${clusterlist}" | sed 's/,/\n/g' | fgrep -wf - ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | sed 's/\:/\t/g' | awk -v OFS="\n" '{ print $2, $5 }' | sort | uniq | wc -l )
   if [ ${nchrs} -eq 1 ]; then
-    chr=$( echo -e "${clusters}" | sed 's/,/\n/g' | fgrep -wf - ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | sed 's/\:/\t/g' | awk -v OFS="\n" '{ print $2, $5 }' | sort | uniq )
-    min=$( echo -e "${clusters}" | sed 's/,/\n/g' | fgrep -wf - ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | awk -v OFS="\n" '{ print $2, $3, $5, $6 }' | sort -nk1,1 | head -n1 )
-    max=$( echo -e "${clusters}" | sed 's/,/\n/g' | fgrep -wf - ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | awk -v OFS="\n" '{ print $2, $3, $5, $6 }' | sort -nk1,1 | tail -n1 )
-    echo -e "${chr}\t${min}\t${max}\t${COHORT_ID}_unresolved\tcomplex\t${observations}\t[${samples}]\t[${clusters}]"
+    chr=$( echo -e "${clusterlist}" | sed 's/,/\n/g' | fgrep -wf - ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | sed 's/\:/\t/g' | awk -v OFS="\n" '{ print $2, $5 }' | sort | uniq )
+    min=$( echo -e "${clusterlist}" | sed 's/,/\n/g' | fgrep -wf - ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | awk -v OFS="\n" '{ print $2, $3, $5, $6 }' | sort -nk1,1 | head -n1 )
+    max=$( echo -e "${clusterlist}" | sed 's/,/\n/g' | fgrep -wf - ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | awk -v OFS="\n" '{ print $2, $3, $5, $6 }' | sort -nk1,1 | tail -n1 )
+    echo -e "${chr}\t${min}\t${max}\t${COHORT_ID}_unresolved\tcomplex\t${observations}\t[${samples}]\t[${clusterlist}]"
   else
-    echo -e "Multiple\t.\t.\t${COHORT_ID}_unresolved\tcomplex\t${observations}\t[${samples}]\t[${clusters}]"
+    echo -e "Multiple\t.\t.\t${COHORT_ID}_unresolved\tcomplex\t${observations}\t[${samples}]\t[${clusterlist}]"
   fi
 done < ${pool} > ${agg}
 cut -f7 ${WRKDIR}/classifier/clusterfix/newCoords/complex_classifications.list | fgrep -wvf - ${WRKDIR}/classifier/clusterfix/newCoords/${COHORT_ID}.putative_complex_sites.list | sed 's/\t/,/g' | sed 's/$,//g' > ${pool}
-while read clusters; do
-  samples=$( while read cluster; do fgrep -w ${cluster} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f20 | tr -d "[]" | sed 's/,/\n/g'; done < <( echo ${clusters} | sed 's/,/\n/g' ) | sort | uniq | paste -s -d, )
+while read clusterlist; do
+  samples=$( while read cluster; do fgrep -w ${cluster} ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | cut -f20 | tr -d "[]" | sed 's/,/\n/g'; done < <( echo ${clusterlist} | sed 's/,/\n/g' ) | sort | uniq | paste -s -d, )
   observations=$( echo ${samples} | sed 's/,/\n/g' | wc -l )
-  nchrs=$( echo -e "${clusters}" | sed 's/,/\n/g' | fgrep -wf - ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | sed 's/\:/\t/g' | awk -v OFS="\n" '{ print $2, $5 }' | sort | uniq | wc -l )
+  nchrs=$( echo -e "${clusterlist}" | sed 's/,/\n/g' | fgrep -wf - ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | sed 's/\:/\t/g' | awk -v OFS="\n" '{ print $2, $5 }' | sort | uniq | wc -l )
   if [ ${nchrs} -eq 1 ]; then
-    chr=$( echo -e "${clusters}" | sed 's/,/\n/g' | fgrep -wf - ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | sed 's/\:/\t/g' | awk -v OFS="\n" '{ print $2, $5 }' | sort | uniq )
-    min=$( echo -e "${clusters}" | sed 's/,/\n/g' | fgrep -wf - ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | awk -v OFS="\n" '{ print $2, $3, $5, $6 }' | sort -nk1,1 | head -n1 )
-    max=$( echo -e "${clusters}" | sed 's/,/\n/g' | fgrep -wf - ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | awk -v OFS="\n" '{ print $2, $3, $5, $6 }' | sort -nk1,1 | tail -n1 )
-    echo -e "${chr}\t${min}\t${max}\t${COHORT_ID}_unresolved\tcomplex\t${observations}\t[${samples}]\t[${clusters}]"
+    chr=$( echo -e "${clusterlist}" | sed 's/,/\n/g' | fgrep -wf - ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | sed 's/\:/\t/g' | awk -v OFS="\n" '{ print $2, $5 }' | sort | uniq )
+    min=$( echo -e "${clusterlist}" | sed 's/,/\n/g' | fgrep -wf - ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | awk -v OFS="\n" '{ print $2, $3, $5, $6 }' | sort -nk1,1 | head -n1 )
+    max=$( echo -e "${clusterlist}" | sed 's/,/\n/g' | fgrep -wf - ${WRKDIR}/raw_clusters/${COHORT_ID}.*.events.bedpe | awk -v OFS="\n" '{ print $2, $3, $5, $6 }' | sort -nk1,1 | tail -n1 )
+    echo -e "${chr}\t${min}\t${max}\t${COHORT_ID}_unresolved\tcomplex\t${observations}\t[${samples}]\t[${clusterlist}]"
   else
-    echo -e "Multiple\t.\t.\t${COHORT_ID}_unresolved\tcomplex\t${observations}\t[${samples}]\t[${clusters}]"
+    echo -e "Multiple\t.\t.\t${COHORT_ID}_unresolved\tcomplex\t${observations}\t[${samples}]\t[${clusterlist}]"
   fi
 done < ${pool} >> ${agg}
 fgrep Unresolved ${WRKDIR}/classifier/clusterfix/newCoords/transloc.classifications.list > ${pool}
