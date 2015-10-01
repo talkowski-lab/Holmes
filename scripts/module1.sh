@@ -56,6 +56,10 @@ while read ID bam sex; do
 done < <( sed '1d' ${samples_list} )
 cat <( echo -e "chr\tstart\tend\t$( cut -f1 ${samples_list} | paste -s )" ) ${WRKDIR}/${COHORT_ID}.WGSdosage_ObsVsExp.bed > ${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsExp.bed
 Rscript -e "x <- read.table(\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsExp.bed\",header=T); x[,4:ncol(x)] <- t(abs(apply(x[,4:ncol(x)],1,scale))); write.table(x,\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_absoluteZscores.bed\",row.names=F,col.names=T,sep=\"\\t\",quote=F)"
+#get median exp/obs ratio for first 45Mb on chr1
+while read ID bam sex; do
+  awk '{ if ($1==1 && $3<=45000000) print $4 }' ${OUTDIR}/QC/sample/${ID}/${ID}_WGSdosageCheck/${ID}.genome.ObsVsExp.bed | awk '{ sum+=$1 }END{ print sum/NR }'
+done < ${samples_list} | sort -nk1,1 > ${WRKDIR}/chr1p_45Mb_dos.txt
 
 #Collect summary for each sample
 echo -e "##liWGS-SV PIPELINE COHORT QC\n##RUN DATE: $( echo $(date) | awk '{ print $1, $2, $3, $NF }' )\n\
@@ -76,9 +80,9 @@ while read ID bam sex; do
   ncov=$( grep -A1 '^GENOME_TERRITORY' ${OUTDIR}/QC/sample/${ID}/${ID}.wgs | tail -n1 | awk '{ print $2 }' ) #nucleotide cov
   osex=$( fgrep -w "PREDICTED SEX" ${OUTDIR}/QC/sample/${ID}/${ID}.sexCheck | awk '{ print $3 }' ) #predicted sex from sexcheck.sh
   index=$( echo "$( awk -v OFS="\t" '{ print NR, $1 }' ${samples_list} | fgrep -w ${ID} | cut -f1 )+3" | bc )
-  dsign=$( awk '{ if ($1==1 && $3<=45000000) print $4 }' ${OUTDIR}/QC/sample/${ID}/${ID}_WGSdosageCheck/${ID}.genome.ObsVsExp.bed | awk '{ sum+=$1 }END{ print sum/NR }' | awk '{ if ($1>=1) print ""; else print "-" }' )
+  dsign=$( awk '{ if ($1==1 && $3<=45000000) print $4 }' ${OUTDIR}/QC/sample/${ID}/${ID}_WGSdosageCheck/${ID}.genome.ObsVsExp.bed | awk '{ sum+=$1 }END{ print sum/NR }' | awk -v med_dos=${med_dos} '{ if ($1>=med_dos) print ""; else print "-" }' )
   dosage=$( awk -v idx=${index} '{ print $idx }' ${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_absoluteZscores.bed | sed '1d' | fgrep -v NA | sort -nk1,1 | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' )
-  echo -e "${ID}\t${total}\t${rd_aln_rt}\t${pr_aln_rt}\t${prop}\t${chim}\t${rd_dup}\t${pr_dup}\t${mis}\t${ismad}\t${icov}\t${ncov}\t${sex}\t${osex}\t${dsign}${dosage}" #print metrics
+  echo -e "${ID}\t${dsign}${dosage}" #print metrics
 done < ${samples_list} >> ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics
 
 #Print warnings
