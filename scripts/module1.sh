@@ -55,11 +55,13 @@ while read ID bam sex; do
   mv ${WRKDIR}/${COHORT_ID}.WGSdosage_ObsVsExp.bed2 ${WRKDIR}/${COHORT_ID}.WGSdosage_ObsVsExp.bed
 done < <( sed '1d' ${samples_list} )
 cat <( echo -e "chr\tstart\tend\t$( cut -f1 ${samples_list} | paste -s )" ) ${WRKDIR}/${COHORT_ID}.WGSdosage_ObsVsExp.bed > ${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsExp.bed
-Rscript -e "x <- read.table(\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsExp.bed\",header=T); x[,4:ncol(x)] <- t(abs(apply(x[,4:ncol(x)],1,scale))); write.table(x,\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_absoluteZscores.bed\",row.names=F,col.names=T,sep=\"\\t\",quote=F)"
+grep -ve "^[XY]" ${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsExp.bed > ${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsExp.noXY.bed
+Rscript -e "x <- read.table(\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_ObsVsExp.noXY.bed\",header=T); x[,4:ncol(x)] <- t(abs(apply(x[,4:ncol(x)],1,scale))); write.table(x,\"${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_absoluteZscores.bed\",row.names=F,col.names=T,sep=\"\\t\",quote=F)"
 #get median exp/obs ratio for first 45Mb on chr1
 while read ID bam sex; do
   awk '{ if ($1==1 && $3<=45000000) print $4 }' ${OUTDIR}/QC/sample/${ID}/${ID}_WGSdosageCheck/${ID}.genome.ObsVsExp.bed | awk '{ sum+=$1 }END{ print sum/NR }'
 done < ${samples_list} | sort -nk1,1 > ${WRKDIR}/chr1p_45Mb_dos.txt
+med_dos=$( cat ${WRKDIR}/chr1p_45Mb_dos.txt | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' )
 
 #Collect summary for each sample
 echo -e "##liWGS-SV PIPELINE COHORT QC\n##RUN DATE: $( echo $(date) | awk '{ print $1, $2, $3, $NF }' )\n\
