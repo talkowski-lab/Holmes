@@ -76,8 +76,9 @@ while read ID bam sex; do
   ncov=$( grep -A1 '^GENOME_TERRITORY' ${OUTDIR}/QC/sample/${ID}/${ID}.wgs | tail -n1 | awk '{ print $2 }' ) #nucleotide cov
   osex=$( fgrep -w "PREDICTED SEX" ${OUTDIR}/QC/sample/${ID}/${ID}.sexCheck | awk '{ print $3 }' ) #predicted sex from sexcheck.sh
   index=$( echo "$( awk -v OFS="\t" '{ print NR, $1 }' ${samples_list} | fgrep -w ${ID} | cut -f1 )+3" | bc )
+  dsign=$( awk '{ if ($1==1 && $3<=45000000) print $4 }' ${OUTDIR}/QC/sample/${ID}/${ID}_WGSdosageCheck/${ID}.genome.ObsVsExp.bed | awk '{ sum+=$1 }END{ print sum/NR }' | awk '{ if ($1>=1) print ""; else print "-" }' )
   dosage=$( awk -v idx=${index} '{ print $idx }' ${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_absoluteZscores.bed | sed '1d' | fgrep -v NA | sort -nk1,1 | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' )
-  echo -e "${ID}\t${total}\t${rd_aln_rt}\t${pr_aln_rt}\t${prop}\t${chim}\t${rd_dup}\t${pr_dup}\t${mis}\t${ismad}\t${icov}\t${ncov}\t${sex}\t${osex}\t${dosage}" #print metrics
+  echo -e "${ID}\t${total}\t${rd_aln_rt}\t${pr_aln_rt}\t${prop}\t${chim}\t${rd_dup}\t${pr_dup}\t${mis}\t${ismad}\t${icov}\t${ncov}\t${sex}\t${osex}\t${dsign}${dosage}" #print metrics
 done < ${samples_list} >> ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics
 
 #Print warnings
