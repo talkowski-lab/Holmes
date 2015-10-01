@@ -82,7 +82,7 @@ while read ID bam sex; do
   index=$( echo "$( awk -v OFS="\t" '{ print NR, $1 }' ${samples_list} | fgrep -w ${ID} | cut -f1 )+3" | bc )
   dsign=$( awk '{ if ($1==1 && $3<=45000000) print $4 }' ${OUTDIR}/QC/sample/${ID}/${ID}_WGSdosageCheck/${ID}.genome.ObsVsExp.bed | awk '{ sum+=$1 }END{ print sum/NR }' | awk -v med_dos=${med_dos} '{ if ($1>=med_dos) print ""; else print "-" }' )
   dosage=$( awk -v idx=${index} '{ print $idx }' ${OUTDIR}/QC/cohort/${COHORT_ID}.WGSdosage_absoluteZscores.bed | sed '1d' | fgrep -v NA | sort -nk1,1 | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' )
-  echo -e "${ID}\t${dsign}${dosage}" #print metrics
+  echo -e "${ID}\t${total}\t${rd_aln_rt}\t${pr_aln_rt}\t${prop}\t${chim}\t${rd_dup}\t${pr_dup}\t${mis}\t${ismad}\t${icov}\t${ncov}\t${sex}\t${osex}\t${dsign}${dosage}" #print metrics
 done < ${samples_list} >> ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics
 
 #Print warnings
