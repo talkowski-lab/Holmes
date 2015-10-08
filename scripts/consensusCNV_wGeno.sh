@@ -9,11 +9,11 @@
 # Consensus Groups without Genotyping:
 #   A [HIGH]: Valid cluster, cnMOPS or genotyping support, <30% blacklist
 #   B [HIGH]: cnMOPS call, ≥50kb, <30% blacklist, genotyping pass, no clustering overlap
-#   C [MED]: cnMOPS call, <50kb, genotyping pass, <30% blacklist
+#   C [MED]: cnMOPS call, 10-50kb, genotyping pass, <30% blacklist
 #   D [MED]: valid cluster, genotyping or cnMOPS support, ≥30% blacklist
 #   E [MED]: cnMOPS call, ≥50kb, genotyping pass, ≥30% blacklist
 #   F [LOW]: cnMOPS call, ≥50kb, no clustering support, no genotyping support
-#   G [LOW]: cnMOPS call, <50kb, genotyping pass, ≥30% blacklist
+#   G [LOW]: cnMOPS call, 10-50kb, genotyping pass, ≥30% blacklist
 #   H [LOW]: valid cluster, <25kb, no cnMOPS or genotyping support
 
 #Input
@@ -39,6 +39,7 @@ fgrep -v GL ${CNV_BLACKLIST} > ${BL}
 cnMOPS_m=`mktemp`
 cnMOPS_cutoff=50000 #size below which cnMOPS calls without clustering support become low-qual
 clustering_cutoff=25000 #size below which clusters without depth support become low-qual
+depth_cutoff=10000 #size below which no depth-only (i.e. lack clustering) calls are permitted
 
 #Pushes classifier output to bed
 ##NOTE: NO LONGER USES format_calls.py BECAUSE OF COORDINATE CHANGES IN CLUSTERING PATCH##
@@ -77,8 +78,8 @@ bedtools intersect -u -r -f 0.51 -a ${TMPDIR}/${ID}_classifier.${cnvtype}.bed -b
 #GROUP B, HIGH - cnMOPS ≥ 50kb, genotyping support, <30% blacklist, no clustering overlap
 bedtools intersect -u -r -f 0.51 -a <( awk -v min=${cnMOPS_cutoff} '{ if ($3-$2>=min) print $0 }' ${cnMOPS_m} ) -b ${gcnv} | bedtools intersect -v -f 0.51 -a - -b ${TMPDIR}/${ID}_classifier.${cnvtype}.bed | bedtools intersect -v -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupB_wGeno", "HIGH" }' > ${TMPDIR}/${ID}.${cnvtype}.B.bed
 
-#GROUP C, MED - cnMOPS < 50kb, genotyping support, <30% blacklist, no clustering overlap
-bedtools intersect -u -r -f 0.51 -a <( awk -v min=${cnMOPS_cutoff} '{ if ($3-$2<min) print $0 }' ${cnMOPS_m} ) -b ${gcnv} | bedtools intersect -v -f 0.51 -a - -b ${TMPDIR}/${ID}_classifier.${cnvtype}.bed | bedtools intersect -v -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupC_wGeno", "MED" }' > ${TMPDIR}/${ID}.${cnvtype}.C.bed
+#GROUP C, MED - cnMOPS 10-50kb, genotyping support, <30% blacklist, no clustering overlap
+bedtools intersect -u -r -f 0.51 -a <( awk -v max=${cnMOPS_cutoff} -v min=${depth_cutoff} '{ if ($3-$2<max && $3-$2>=min) print $0 }' ${cnMOPS_m} ) -b ${gcnv} | bedtools intersect -v -f 0.51 -a - -b ${TMPDIR}/${ID}_classifier.${cnvtype}.bed | bedtools intersect -v -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupC_wGeno", "MED" }' > ${TMPDIR}/${ID}.${cnvtype}.C.bed
 
 #GROUP D, MED - Valid cluster w/ cnMOPS OR genotyping support, ≥30% blacklist
 bedtools intersect -u -r -f 0.51 -a ${TMPDIR}/${ID}_classifier.${cnvtype}.bed -b <( cat ${cnMOPS_m} ${gcnv} | cut -f1-5 ) | bedtools intersect -u -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupD_wGeno", "MED" }' > ${TMPDIR}/${ID}.${cnvtype}.D.bed
@@ -89,8 +90,8 @@ bedtools intersect -u -r -f 0.51 -a <( awk -v min=${cnMOPS_cutoff} '{ if ($3-$2>
 #GROUP F, LOW - cnMOPS ≥ 50kb, no genotyping support, no clustering overlap
 bedtools intersect -v -r -f 0.51 -a <( awk -v min=${cnMOPS_cutoff} '{ if ($3-$2>=min) print $0 }' ${cnMOPS_m} ) -b ${gcnv} | bedtools intersect -v -f 0.51 -a - -b ${TMPDIR}/${ID}_classifier.${cnvtype}.bed | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupF_wGeno", "LOW" }' > ${TMPDIR}/${ID}.${cnvtype}.F.bed
 
-#GROUP G, LOW - cnMOPS < 50kb, genotyping support, ≥30% blacklist, no clustering overlap
-bedtools intersect -u -r -f 0.51 -a <( awk -v min=${cnMOPS_cutoff} '{ if ($3-$2<min) print $0 }' ${cnMOPS_m} ) -b ${gcnv} | bedtools intersect -v -f 0.51 -a - -b ${TMPDIR}/${ID}_classifier.${cnvtype}.bed | bedtools intersect -u -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupG_wGeno", "LOW" }' > ${TMPDIR}/${ID}.${cnvtype}.G.bed
+#GROUP G, LOW - cnMOPS 10-50kb, genotyping support, ≥30% blacklist, no clustering overlap
+bedtools intersect -u -r -f 0.51 -a <( awk -v max=${cnMOPS_cutoff} -v min=${depth_cutoff} '{ if ($3-$2<max && $3-$2>=min) print $0 }' ${cnMOPS_m} ) -b ${gcnv} | bedtools intersect -v -f 0.51 -a - -b ${TMPDIR}/${ID}_classifier.${cnvtype}.bed | bedtools intersect -u -f 0.3 -a - -b ${BL} | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupG_wGeno", "LOW" }' > ${TMPDIR}/${ID}.${cnvtype}.G.bed
 
 #GROUP H, LOW - Valid cluster, no cnMOPS support, no genotyping support, <25kb
 bedtools intersect -v -r -f 0.51 -a <( awk -v min=${clustering_cutoff} '{ if ($3-$2<min) print $0 }' ${TMPDIR}/${ID}_classifier.${cnvtype}.bed ) -b <( cat ${cnMOPS_m} ${gcnv} | cut -f1-5 ) | awk -v OFS="\t" '{ print $1, $2, $3, $4, "GroupH_wGeno", "LOW" }' > ${TMPDIR}/${ID}.${cnvtype}.H.bed
