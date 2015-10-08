@@ -102,7 +102,10 @@ while read ID total rd_aln_rt pr_aln_rt prop chim rd_dup pr_dup mis ismad icov n
     echo "WARNING [MODULE 1]: ${ID} haploid physical coverage < 30X"
   fi
   if [ $( echo "${dosage} > 1" | bc) -eq 1 ]; then
-    echo "WARNING [MODULE 1]: ${ID} WGS dosage absolute Z-score > 1"
+    echo "WARNING [MODULE 1]: ${ID} WGS dosage Z-score > 1"
+  fi
+  if [ $( echo "${dosage} < 1" | bc) -eq 1 ]; then
+    echo "WARNING [MODULE 1]: ${ID} WGS dosage Z-score < 1"
   fi
   if [ ${sex} != ${osex} ] && [ ${sex} != "U" ]; then
     echo "WARNING [MODULE 1]: ${ID} predicted sex does not match reported sex"
