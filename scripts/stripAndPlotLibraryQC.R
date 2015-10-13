@@ -16,7 +16,7 @@ colnames(x) <- c("ID","Total Read Pairs","Read Alignment Rate","Pair Alignment R
                  "Chimeras","Read Duplicates","Pair Duplicates","Median Insert Size",
                  "Insert MAD","Haploid Physical Coverage","Haploid Nucleotide Coverage","Reported Sex",
                  "Observed Sex","Absolute Dosage Z-Score")
-x[,2] <- x[,2]/2000000
+x[,2] <- x[,2]/1000000
 x[,3:8] <- 100*x[,3:8]
 
 #Write metrics
@@ -138,7 +138,7 @@ pl <- hist(x[,9],
            col="gold2",
            main="Median Insert Size",
            xlim=c(0.8*min(x[,9]),
-                  1.2*min(x[,9])),
+                  1.2*max(x[,9])),
            xlab="",
            cex.axis=0.7)
 abline(v=median(x[,9],na.rm=T),lwd=2,col="firebrick")
