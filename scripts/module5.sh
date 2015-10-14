@@ -40,7 +40,11 @@ done
 
 #Apply cluster fix
 mkdir ${WRKDIR}/classifier/clusterfix
-bsub -u nobody -q normal -o ${OUTDIR}/logs/classifier_clusterfix.log -e ${OUTDIR}/logs/classifier_clusterfix.log -sla miket_sc -J ${COHORT_ID}_clusterPatch "${CLASSIFIER_DIR}/cleanClusters_patch.sh ${WRKDIR}/classifier/${COHORT_ID}_deletion.clusters ${WRKDIR}/classifier/clusterfix/${COHORT_ID}_deletion.patched.clusters ${uscore_skip} TRUE"
+mkdir ${WRKDIR}/classifier/clusterfix/delsplit
+for contig in $( seq 1 22 ) X Y; do
+  awk -v OFS="\t" -v contig=${contig} '{ if ($4==contig || $4=="") print $0 }' ${WRKDIR}/classifier/${COHORT_ID}_deletion.clusters | cat -s | sed '1{/^$/d}' > ${WRKDIR}/classifier/clusterfix/delsplit/${COHORT_ID}_deletion.chr${contig}.clusters
+  bsub -u nobody -q normal -o ${OUTDIR}/logs/classifier_clusterfix.log -e ${OUTDIR}/logs/classifier_clusterfix.log -sla miket_sc -J ${COHORT_ID}_clusterPatch "${CLASSIFIER_DIR}/cleanClusters_patch.sh ${WRKDIR}/classifier/clusterfix/delsplit/${COHORT_ID}_deletion.chr${contig}.clusters ${WRKDIR}/classifier/clusterfix/delsplit/${COHORT_ID}_deletion.chr${contig}.patched.clusters ${uscore_skip} TRUE"
+done
 for class in insertion inversion transloc; do
   bsub -u nobody -q normal -o ${OUTDIR}/logs/classifier_clusterfix.log -e ${OUTDIR}/logs/classifier_clusterfix.log -sla miket_sc -J ${COHORT_ID}_clusterPatch "${CLASSIFIER_DIR}/cleanClusters_patch.sh ${WRKDIR}/classifier/${COHORT_ID}_${class}.clusters ${WRKDIR}/classifier/clusterfix/${COHORT_ID}_${class}.patched.clusters ${uscore_skip} FALSE"
 done
@@ -57,6 +61,11 @@ until [[ $GATEcount == 0 ]]; do
     echo "$(date): Waiting on ${GATEcount} jobs to complete"
     GATEwait=0
   fi
+done
+
+#Concatenate split deletion patched clusters
+for contig in $( seq 1 22 ) X Y; do
+  awk -v OFS="\t" -v contig=${contig} '{ if ($1!="") print contig"_"$0; else print $0 }' ${WRKDIR}/classifier/clusterfix/delsplit/${COHORT_ID}_deletion.chr${contig}.patched.clusters >> ${WRKDIR}/classifier/clusterfix/${COHORT_ID}_deletion.patched.clusters
 done
 
 #Complete classifier on fixed clusters
