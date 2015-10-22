@@ -34,6 +34,14 @@ bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/geneAnnotation.log -e ${OUTDIR}/l
 awk -v OFS="\t" '{ print $4, $5, $6, "INS_SINK", $7 }' ${WRKDIR}/final_variants/${COHORT_ID}.insertion.bedpe | fgrep -v "#" | sed '1d' > ${WRKDIR}/annotations/insertionSink_preAnno.bed
 bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/geneAnnotation.log -e ${OUTDIR}/logs/geneAnnotation.log -u nobody -J ${COHORT_ID}_annotation "${liWGS_SV}/scripts/annotate_SVintervals.sh ${WRKDIR}/annotations/insertionSink_preAnno.bed INS_SINK ${WRKDIR}/annotations/insertionSink_gene_anno.bed ${params}"
 
+#Submit retrotransposon check
+for class in deletion insertion inversion transloc; do
+  echo -e "${class}\t${WRKDIR}/classifier/clusterfix/newCoords/${class}.events.reclassified.bedpe" >> ${WRKDIR}/events.list
+  echo -e "${class}\t${WRKDIR}/classifier/clusterfix/${COHORT_ID}_${class}.patched.clusters" >> ${WRKDIR}/clusters.list
+done
+bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/retrotransposon_check.log -e ${OUTDIR}/logs/retrotransposon_check.log -u nobody -J ${COHORT_ID}_annotation "/data/talkowski/rlc47/code/dna-scripts/get_retrotransposons.sh ${WRKDIR}/events.list ${WRKDIR}/clusters.list ${WRKDIR}/classifier/clusterfix/newCoords/"
+
+
 #Gate until all annotations complete; 20 sec check; 5 min report
 GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_annotation" | wc -l )
 GATEwait=0

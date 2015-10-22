@@ -192,7 +192,7 @@ done < ${pool} >> ${agg}
 sort -nk1,1 -k4,4n -k2,2n -k5,5n ${agg} | awk -v OFS="\t" '{ print $1, $2, $3, $4"_"NR, $5, $6, $7, $8 }' >> ${WRKDIR}/final_variants/${COHORT_ID}.complex.bed
 
 #Write out all unresolved events as bed; bed intervals correspond to min and max coordinates. If inter-chromosomal, chromosome="Multiple" and coordinates will be ".".
-echo -e "#chr\tmin\tmax\tID\tobservations\toutput_class\tsamples\tclusters" > ${WRKDIR}/final_variants/${COHORT_ID}.unresolved.bed
+echo -e "#chr\tmin\tmax\tID\toutput_class\tobservations\tsamples\tclusters" > ${WRKDIR}/final_variants/${COHORT_ID}.unresolved.bed
 grep -e 'Unresolved\|SKIP_MissingBPs' ${WRKDIR}/classifier/clusterfix/newCoords/complex_classifications.list > ${pool}
 while read chrA minA maxA chrB minB maxB cxcluster class_old flag; do
   clusterlist=$( fgrep -w ${cxcluster} ${WRKDIR}/classifier/clusterfix/newCoords/${COHORT_ID}.putative_complex_sites.list | sed 's/\t/,/g' | sed 's/,$//g' )

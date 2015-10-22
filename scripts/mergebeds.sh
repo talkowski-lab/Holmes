@@ -73,9 +73,9 @@ while read chr start end ID eID info; do
       echo "blank"
       echo "$( cut -f2 ${clust} | sort -nk1,1 | tail -n1 )-$( cut -f2 ${clust} | sort -nk1,1 | head -n1 )" | bc
       echo "$( cut -f3 ${clust} | sort -nk1,1 | tail -n1 )-$( cut -f3 ${clust} | sort -nk1,1 | head -n1 )" | bc
-      cat ${clust} | wc -l
-      cut -f4 ${clust} | paste -s -d, | sed -e 's/^/[/g' -e 's/$/]/g'
-      cut -f6 ${clust} | paste -s -d\| | sed -e 's/^/[/g' -e 's/$/]/g'
+      cat ${clust} | sort | uniq | wc -l #prints number of observations
+      cut -f4 ${clust} | sort | uniq | paste -s -d, | sed -e 's/^/[/g' -e 's/$/]/g' #prints samples
+      cut -f6 ${clust} | spaste -s -d\| | sed -e 's/^/[/g' -e 's/$/]/g' #prints info
       cut -f5 ${clust} >> ${remove}
     else
       awk -v OFS="\n" '{ print $1, $2, $3, "blank", "0", "0", "1", "["$4"]", "["$6"]" }' ${clust}
