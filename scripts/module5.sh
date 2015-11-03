@@ -65,7 +65,7 @@ done
 
 #Concatenate split deletion patched clusters
 for contig in $( seq 1 22 ) X Y; do
-  awk -v OFS="\t" -v contig=${contig} '{ if ($1!="") print contig"_"$0; else print $0 }' ${WRKDIR}/classifier/clusterfix/delsplit/${COHORT_ID}_deletion.chr${contig}.patched.clusters >> ${WRKDIR}/classifier/clusterfix/${COHORT_ID}_deletion.patched.clusters
+  cat ${WRKDIR}/classifier/clusterfix/delsplit/${COHORT_ID}_deletion.chr${contig}.patched.clusters >> ${WRKDIR}/classifier/clusterfix/${COHORT_ID}_deletion.patched.clusters
 done
 
 #Complete classifier on fixed clusters
