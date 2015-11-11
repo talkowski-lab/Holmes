@@ -11,13 +11,51 @@ params=$2
 #Source params file
 . ${params}
 
-#Set other params
-min_geno=20 #minimum cohort size for incorporating CNV genotype information into consensus script
+#UPDATE FOR MkIII CONSENSUS: ALWAYS GENOTYPE & IGNORE DNACOPY CALLS (FOR NOW)
+# #Set other params
+# min_geno=20 #minimum cohort size for incorporating CNV genotype information into consensus script
 
 #Create working directory for consensus CNVs
 if ! [ -e ${WRKDIR}/consensusCNV ]; then
   mkdir ${WRKDIR}/consensusCNV
 fi
+
+#Merge cnMOPS calls
+if [ -e ${WRKDIR}/cnMOPS_del_to_merge.list ]; then
+  rm ${WRKDIR}/cnMOPS_del_to_merge.list
+fi
+if [ -e ${WRKDIR}/cnMOPS_dup_to_merge.list ]; then
+  rm ${WRKDIR}/cnMOPS_dup_to_merge.list
+fi
+while read ID bam sex; do
+  echo -e "${ID}\t${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed" >> ${WRKDIR}/cnMOPS_del_to_merge.list
+  echo -e "${ID}\t${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed" >> ${WRKDIR}/cnMOPS_dup_to_merge.list
+done < ${samples_list}
+mkdir ${WRKDIR}/consensusCNV/cnMOPS_chrsplit
+for contig in $( seq 1 22 ) X Y; do
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/merge_cnMOPS.log -J ${COHORT_ID}_merge "${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/cnMOPS_del_to_merge.list 10000 ${contig} ${COHORT_ID}_cnMOPS_${contig}_dels ${WRKDIR}/consensusCNV/cnMOPS_chrsplit/"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/merge_cnMOPS.log -J ${COHORT_ID}_merge "${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/cnMOPS_dup_to_merge.list 10000 ${contig} ${COHORT_ID}_cnMOPS_${contig}_dups ${WRKDIR}/consensusCNV/cnMOPS_chrsplit/"
+done
+if [ -e ${WRKDIR}/consensusCNV/${COHORT_ID}_cnMOPS_dels.merged.bed ]; then
+  rm ${WRKDIR}/consensusCNV/${COHORT_ID}_cnMOPS_dels.merged.bed
+fi
+if [ -e ${WRKDIR}/consensusCNV/${COHORT_ID}_cnMOPS_dups.merged.bed ]; then
+  rm ${WRKDIR}/consensusCNV/${COHORT_ID}_cnMOPS_dups.merged.bed
+fi
+for contig in $( seq 1 22 ) X Y; do
+  cat ${WRKDIR}/consensusCNV/cnMOPS_chrsplit/${COHORT_ID}_cnMOPS_${contig}_dels.merged.${contig}.bed >> ${WRKDIR}/consensusCNV/${COHORT_ID}_cnMOPS_dels.merged.bed
+  cat ${WRKDIR}/consensusCNV/cnMOPS_chrsplit/${COHORT_ID}_cnMOPS_${contig}_dups.merged.${contig}.bed >> ${WRKDIR}/consensusCNV/${COHORT_ID}_cnMOPS_dups.merged.bed
+done
+
+
+
+
+
+
+
+
+
+
 
 #Genotype all CNV intervals if cohort has ≥ ${min_geno} samples, or if ${GENOTYPE_OVERRIDE}!="TRUE"
 if [ $( cat ${samples_list} | wc -l ) -ge ${min_geno} ] && [ ${GENOTYPE_OVERRIDE} != "TRUE" ]; then
