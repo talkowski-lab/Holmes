@@ -21,6 +21,8 @@
 #Genotyping confirmation: genotyping is considered a "confirmation" if at least half of samples in the prior call (either clustering or cnMOPS call) return a concordant genotype.
 #  -Note that sites with >80% power to be resolved by a two-sample T-test of priors will by design have 100% confirmation or 0% confirmation. Underpowered sites are probably worth checking by hand.
 
+#Note: males and females are genotyped independently on X, and females are not genotyped on Y (all sites automatically reported "-9", or "no data" encoding)
+
 #Consensus group confidence levels:
 # HIGH: A1, A2, A3, C1
 # MED: A1B, A2B, A3B, A4, B1, C1B, C2
@@ -66,9 +68,9 @@ cnMOPS_to_remove=`mktemp`
 samp_union=`mktemp`
 samp_cnMOPS=`mktemp`
 samp_clust=`mktemp`
-gA_tmp=`mktemp`
-gB_tmp=`mktemp`
-gC_tmp=`mktemp`
+gA_tmp=${WRKDIR}/consensusCNV/${cnvtype}.gA.prelim.bed
+gB_tmp=${WRKDIR}/consensusCNV/${cnvtype}.gB.prelim.bed
+gC_tmp=${WRKDIR}/consensusCNV/${cnvtype}.gC.prelim.bed
 preOut=`mktemp`
 
 #Convert classifier output to extended bed file
@@ -86,6 +88,14 @@ cut -f1-4,8 ${cnMOPS_raw} | sed 's/[\t]+/\t/g' > ${cnMOPS}
 
 #Get max insert size in cohort; will automatically force cluster-based coordinates to be at least this distance apart if smaller
 max_insert=$( fgrep -v "#" ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics | cut -f9 | sort -nrk1,1 | head -n1 )
+
+#Get sex indexes; used for genotyping X and Y
+Midx=$( echo "$( awk -v OFS="\t" '{ print NR, $1 }' ${samples_list} | fgrep -wf ${WRKDIR}/males.list | awk '{ print ($1)+3 }' )" | cat <( echo -e "1\n2\n3" ) - | paste -s -d, )
+Fidx=$( echo "$( awk -v OFS="\t" '{ print NR, $1 }' ${samples_list} | fgrep -wf ${WRKDIR}/females.list | awk '{ print ($1)+3 }' )" | cat <( echo -e "1\n2\n3" ) - | paste -s -d, )
+
+#Get counts of males and females; used for genotyping X and Y
+nmale=$( cat ${WRKDIR}/males.list | wc -l )
+nfem=$( cat ${WRKDIR}/females.list | wc -l )
 
 #Screen for clusters with ≥ 50% cnMOPS reciprocal overlap: groups A & B
 while read chr start end cID samples; do
@@ -121,12 +131,14 @@ while read chr start end cID samples; do
   fi
 done < ${val_clust}
 
-#Remove intersected cnMOPS IDs & print all cnMOPS calls with no clustering to gC_tmp: group C
+#Remove intersected cnMOPS IDs & print all cnMOPS calls with no clustering to gC_tmp. Also restricts to ≥ 10kb to speed up genotyping
 while read chr start end cID samples; do
-  #report event with cnMOPS coordinates and which samples had cnMOPS
-  #temp file format: chr, start, stop, placeholder for ID, count of union samples, union samples, cluster ID, count of cluster samples, cluster samples, cnMOPS ID(s), count of cnMOPS samples, cnMOPS samples (union), cnMOPS concordance
-  echo ${samples} | tr -d "[]" | sed 's/,/\n/g' | sort | uniq > ${samp_cnMOPS}
-  echo -e "${chr}\t${start}\t${end}\tblank\t$( cat ${samp_cnMOPS} | wc -l )\t${samples}\t.\t0\t.\t${cID}\t$( cat ${samp_cnMOPS} | wc -l )\t${samples}\t." >> ${gC_tmp}
+  if [ $( echo "${end}-${start}" | bc ) -ge 10000 ]; then
+    #report event with cnMOPS coordinates and which samples had cnMOPS
+    #temp file format: chr, start, stop, placeholder for ID, count of union samples, union samples, cluster ID, count of cluster samples, cluster samples, cnMOPS ID(s), count of cnMOPS samples, cnMOPS samples (union), cnMOPS concordance
+    echo ${samples} | tr -d "[]" | sed 's/,/\n/g' | sort | uniq > ${samp_cnMOPS}
+    echo -e "${chr}\t${start}\t${end}\tblank\t$( cat ${samp_cnMOPS} | wc -l )\t${samples}\t.\t0\t.\t${cID}\t$( cat ${samp_cnMOPS} | wc -l )\t${samples}\t." >> ${gC_tmp}
+  fi
 done < <( fgrep -wvf ${cnMOPS_to_remove} ${cnMOPS} )
 
 #Assign temporary group-based CNV IDs to all intervals pre-genotyping
@@ -141,7 +153,8 @@ mv ${gC_tmp}2 ${gC_tmp}
 mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping
 mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit
 mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots
-for contig in $( seq 1 20 ) X Y; do
+#Genotype autosomes
+for contig in $( seq 1 22 ); do
   mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}
   mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots/${contig}
   cat ${gA_tmp} ${gB_tmp} ${gC_tmp} | sort -k1,1V -k2,2n -k3,3n | cut -f1-4,6 | tr -d "[]" | awk -v contig=${contig} '{ if ($1==contig) print $0 }' > ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}_toGenotype.${contig}.bed
@@ -153,6 +166,76 @@ for contig in $( seq 1 20 ) X Y; do
     bsub -q big -R 'rusage[mem=20000]' -M 20000 -sla miket_sc -J ${COHORT_ID}_${cnvtype}_genotypeCNV -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log "cd ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots/${contig}; module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV.R ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}_toGenotype.${contig}.bed ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.physical.cov_matrix.${contig}.bed ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}_Genotypes.${contig}.bed TRUE Z TRUE FALSE > ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}.genotyping.log 2> ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}.genotyping.err"
   fi
 done
+#Genotype chrX by sex in both M and F
+for contig in X; do
+  mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}
+  mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots/${contig}
+  for sex in M F; do
+    mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}
+    mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots/${contig}/${sex}
+  done
+  awk -v chr=${contig} '{ if ($1==chr) print }' ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed | bedtools intersect -v -a - -b ${NMASK} | cat <( head -n1 ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ) - > ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.physical.cov_matrix.${contig}.bed
+  cut -f ${Midx} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.physical.cov_matrix.${contig}.bed > ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/M/${COHORT_ID}.physical.cov_matrix.${contig}.bed
+  cut -f ${Fidx} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.physical.cov_matrix.${contig}.bed > ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/F/${COHORT_ID}.physical.cov_matrix.${contig}.bed
+  cat ${gA_tmp} ${gB_tmp} ${gC_tmp} | sort -k1,1V -k2,2n -k3,3n | cut -f1-4,6 | tr -d "[]" | awk -v contig=${contig} '{ if ($1==contig) print $0 }' > ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}_toGenotype.${contig}.bed
+  #split genotyping sites by sex
+  while read chr start end ID samples; do
+    #if > 1 sample is male, add to male list and remove female samples from priors
+    if [ $( echo "${samples}" | sed 's/,/\n/g' | fgrep -wf ${WRKDIR}/males.list - | wc -l ) -gt 0 ]; then
+      newsamp=$( echo "${samples}" | sed 's/,/\n/g' | fgrep -wvf ${WRKDIR}/females.list - | paste -d, -s )
+      echo -e "${chr}\t${start}\t${end}\t${ID}\t${newsamp}" >> ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/M/${COHORT_ID}.${cnvtype}_toGenotype.${contig}.bed
+    fi
+    #if > 1 sample is female, add to female list and remove male samples from priors
+    if [ $( echo "${samples}" | sed 's/,/\n/g' | fgrep -wf ${WRKDIR}/females.list - | wc -l ) -gt 0 ]; then
+      newsamp=$( echo "${samples}" | sed 's/,/\n/g' | fgrep -wvf ${WRKDIR}/males.list - | paste -d, -s )
+      echo -e "${chr}\t${start}\t${end}\t${ID}\t${newsamp}" >> ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/F/${COHORT_ID}.${cnvtype}_toGenotype.${contig}.bed
+    fi
+  done < ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}_toGenotype.${contig}.bed
+  # Submit genotyping
+  for sex in M F; do
+    if [ ${cnvtype} == "del" ]; then
+      bsub -q big -R 'rusage[mem=20000]' -M 20000 -sla miket_sc -J ${COHORT_ID}_${cnvtype}_genotypeCNV -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log "cd ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots/${contig}/${sex}; module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV.R ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.${cnvtype}_toGenotype.${contig}.bed ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.physical.cov_matrix.${contig}.bed ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.${cnvtype}_Genotypes.${contig}.bed TRUE Z TRUE TRUE > ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.${cnvtype}.genotyping.log 2> ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.${cnvtype}.genotyping.err"
+    else
+      bsub -q big -R 'rusage[mem=20000]' -M 20000 -sla miket_sc -J ${COHORT_ID}_${cnvtype}_genotypeCNV -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log "cd ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots/${contig}/${sex}; module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV.R ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.${cnvtype}_toGenotype.${contig}.bed ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.physical.cov_matrix.${contig}.bed ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.${cnvtype}_Genotypes.${contig}.bed TRUE Z TRUE FALSE > ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.${cnvtype}.genotyping.log 2> ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.${cnvtype}.genotyping.err"
+    fi
+  done
+done
+#Genotype Y only in males
+for contig in Y; do
+  mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}
+  mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots/${contig}
+  for sex in M; do
+    mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}
+    mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots/${contig}/${sex}
+  done
+  awk -v chr=${contig} '{ if ($1==chr) print }' ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed | bedtools intersect -v -a - -b ${NMASK} | cat <( head -n1 ${WRKDIR}/iCov/${COHORT_ID}.physical.cov_matrix.bed ) - > ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.physical.cov_matrix.${contig}.bed
+  cut -f ${Midx} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.physical.cov_matrix.${contig}.bed > ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/M/${COHORT_ID}.physical.cov_matrix.${contig}.bed
+  cat ${gA_tmp} ${gB_tmp} ${gC_tmp} | sort -k1,1V -k2,2n -k3,3n | cut -f1-4,6 | tr -d "[]" | awk -v contig=${contig} '{ if ($1==contig) print $0 }' > ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}_toGenotype.${contig}.bed
+  #split genotyping sites by sex
+  while read chr start end ID samples; do
+    #if > 1 sample is male, add to male list and remove female samples from priors
+    if [ $( echo "${samples}" | sed 's/,/\n/g' | fgrep -wf ${WRKDIR}/males.list - | wc -l ) -gt 0 ]; then
+      newsamp=$( echo "${samples}" | sed 's/,/\n/g' | fgrep -wvf ${WRKDIR}/females.list - | paste -d, -s )
+      echo -e "${chr}\t${start}\t${end}\t${ID}\t${newsamp}" >> ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/M/${COHORT_ID}.${cnvtype}_toGenotype.${contig}.bed
+    fi
+  done < ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}_toGenotype.${contig}.bed
+  #Submit genotyping
+  for sex in M; do
+    if [ ${cnvtype} == "del" ]; then
+      bsub -q big -R 'rusage[mem=20000]' -M 20000 -sla miket_sc -J ${COHORT_ID}_${cnvtype}_genotypeCNV -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log "cd ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots/${contig}/${sex}; module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV.R ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.${cnvtype}_toGenotype.${contig}.bed ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.physical.cov_matrix.${contig}.bed ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.${cnvtype}_Genotypes.${contig}.bed TRUE Z TRUE TRUE > ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.${cnvtype}.genotyping.log 2> ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.${cnvtype}.genotyping.err"
+    else
+      bsub -q big -R 'rusage[mem=20000]' -M 20000 -sla miket_sc -J ${COHORT_ID}_${cnvtype}_genotypeCNV -o ${OUTDIR}/logs/genotyping.log -e ${OUTDIR}/logs/genotyping.log "cd ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots/${contig}/${sex}; module load R/3.1.0; Rscript ${liWGS_SV}/scripts/genotypeCNV.R ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.${cnvtype}_toGenotype.${contig}.bed ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.physical.cov_matrix.${contig}.bed ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.${cnvtype}_Genotypes.${contig}.bed TRUE Z TRUE FALSE > ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.${cnvtype}.genotyping.log 2> ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${sex}/${COHORT_ID}.${cnvtype}.genotyping.err"
+    fi
+  done
+  #Create fake genotyping matrix for Y in females (all -9, "no data" encoding)
+  mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/F
+  echo -e "CNV_ID\tchr\tstart\tend\t$( paste -s ${WRKDIR}/females.list )" > ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/F/${COHORT_ID}.${cnvtype}_Genotypes.${contig}.bed
+  while read chr start end ID samples; do
+    echo -e "${ID}\t${chr}\t${start}\t${end}"
+    perl -E "say \"-9\t\" x ${nfem}"
+  done < ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}_toGenotype.${contig}.bed | paste - - >> ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/F/${COHORT_ID}.${cnvtype}_Genotypes.${contig}.bed
+done
+
 
 #Gate until complete; 20 sec check; 5 min report
 GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_${cnvtype}_genotypeCNV" | wc -l )
@@ -165,6 +248,43 @@ until [[ $GATEcount == 0 ]]; do
     echo -e "STATUS [$(date)]: Waiting on ${GATEcount} jobs..."
     GATEwait=0
   fi
+done
+
+#Merge & complete allosome genotyping
+for contig in X Y; do
+  if [ -e ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}.genotyping.log ]; then
+    rm ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}.genotyping.log
+  fi
+  paste <( head -n1 ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/M/${COHORT_ID}.${cnvtype}_Genotypes.${contig}.bed ) <( head -n1 ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/F/${COHORT_ID}.${cnvtype}_Genotypes.${contig}.bed | cut -f5- ) > ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}_Genotypes.${contig}.bed
+  while read chr start end ID samples; do
+    echo -e "${ID}\t${chr}\t${start}\t${end}"
+    #Set all males to "-9" genotype if site not genotyped in males
+    if [ $( fgrep -w ${ID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/M/${COHORT_ID}.${cnvtype}_Genotypes.${contig}.bed | wc -l ) -eq 0 ]; then
+      perl -E "say \"-9\t\" x ${nmale}"
+    else
+      fgrep -w ${ID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/M/${COHORT_ID}.${cnvtype}_Genotypes.${contig}.bed | cut -f5-
+    fi
+    #Set all females to "-9" genotype if site not genotyped in females
+    if [ $( fgrep -w ${ID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/F/${COHORT_ID}.${cnvtype}_Genotypes.${contig}.bed | wc -l ) -eq 0 ]; then
+      perl -E "say \"-9\t\" x ${nfem}"
+    else
+      fgrep -w ${ID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/F/${COHORT_ID}.${cnvtype}_Genotypes.${contig}.bed | cut -f5-
+    fi
+    #Decide which logfile to use (for pval & power)
+    if [ ${contig} != "Y" ] && [ $( fgrep -w ${ID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/F/${COHORT_ID}.${cnvtype}.genotyping.log | wc -l ) -gt 0 ]; then
+      if [ $( fgrep -w ${ID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/M/${COHORT_ID}.${cnvtype}.genotyping.log | wc -l ) -gt 0 ]; then
+        if [ ${nfem} -ge ${nmale} ]; then
+          fgrep -w ${ID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/F/${COHORT_ID}.${cnvtype}.genotyping.log >> ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}.genotyping.log
+        else
+          fgrep -w ${ID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/M/${COHORT_ID}.${cnvtype}.genotyping.log >> ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}.genotyping.log
+        fi
+      else
+        fgrep -w ${ID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/F/${COHORT_ID}.${cnvtype}.genotyping.log >> ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}.genotyping.log
+      fi
+    else
+      fgrep -w ${ID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/M/${COHORT_ID}.${cnvtype}.genotyping.log >> ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}.genotyping.log
+    fi      
+  done < ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}_toGenotype.${contig}.bed | paste - - - | sed 's/[\t]+/\t/g' >> ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}_Genotypes.${contig}.bed
 done
 
 #Overlap group A with genotyping
@@ -202,6 +322,9 @@ while read chr start end eID count_union samples_union cluster_ID count_cluster 
     power="."
   else
     pval=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.log | fgrep -w Cannot | awk '{ print $NF }' | cut -d\# -f2 | tr -d "/" )
+    if [ -z ${pval} ]; then
+      pval="."
+    fi
     power=0
   fi
   #Groups A1 & A2 have 100% cnMOPS concordance
@@ -313,6 +436,9 @@ while read chr start end eID count_union samples_union cluster_ID count_cluster 
     power="."
   else
     pval=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.log | fgrep -w Cannot | awk '{ print $NF }' | cut -d\# -f2 | tr -d "/" )
+    if [ -z ${pval} ]; then
+      pval="."
+    fi
     power=0
   fi
   #group B1 is genotyping pass
@@ -383,6 +509,9 @@ while read chr start end eID count_union samples_union cluster_ID count_cluster 
     power="."
   else
     pval=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.log | fgrep -w Cannot | awk '{ print $NF }' | cut -d\# -f2 | tr -d "/" )
+    if [ -z ${pval} ]; then
+      pval="."
+    fi
     power=0
   fi
   #group C1 is genotyping pass and restricted to ≥ 10kb
@@ -432,4 +561,4 @@ echo -e "#Chr\tStart\tEnd\tID\tGroup\tConfidence\tObservations\tSamples\tCluster
 sort -Vk1,1 -k2,2n -k3,3n ${preOut} >> ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_${cnvtype}s.bed
 
 #Clean up
-rm ${val_clust} ${cnMOPS} ${overlap} ${cnMOPS_to_remove} ${samp_union} ${samp_cnMOPS} ${samp_clust} ${gA_tmp} ${gB_tmp} ${gC_tmp} ${preOut}
+rm ${val_clust} ${cnMOPS} ${overlap} ${cnMOPS_to_remove} ${samp_union} ${samp_cnMOPS} ${samp_clust} ${preOut}
