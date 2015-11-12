@@ -36,6 +36,20 @@ for contig in $( seq 1 22 ) X Y; do
   bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/merge_cnMOPS.log -J ${COHORT_ID}_merge "${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/cnMOPS_del_to_merge.list 10000 ${contig} ${COHORT_ID}_cnMOPS_${contig}_dels ${WRKDIR}/consensusCNV/cnMOPS_chrsplit/"
   bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/merge_cnMOPS.log -J ${COHORT_ID}_merge "${liWGS_SV}/scripts/mergebeds.sh ${WRKDIR}/cnMOPS_dup_to_merge.list 10000 ${contig} ${COHORT_ID}_cnMOPS_${contig}_dups ${WRKDIR}/consensusCNV/cnMOPS_chrsplit/"
 done
+
+#Gate until complete; 20 sec check; 5 min report
+GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_merge" | wc -l )
+GATEwait=0
+until [[ $GATEcount == 0 ]]; do
+  sleep 20s
+  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_merge" | wc -l )
+  GATEwait=$[${GATEwait} +1]
+  if [[ $GATEwait == 15 ]]; then
+    echo -e "STATUS [$(date)]: Waiting on ${GATEcount} jobs..."
+    GATEwait=0
+  fi
+done
+
 if [ -e ${WRKDIR}/consensusCNV/${COHORT_ID}_cnMOPS_dels.merged.bed ]; then
   rm ${WRKDIR}/consensusCNV/${COHORT_ID}_cnMOPS_dels.merged.bed
 fi
