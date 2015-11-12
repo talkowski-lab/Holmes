@@ -306,7 +306,7 @@ while read chr start end eID count_union samples_union cluster_ID count_cluster 
   #Get predicted homozygoes (deletions only)
   if [ ${cnvtype} == "del" ] && [ ${gRes} == "PASS" ]; then
     homo=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.log | fgrep "[" | awk '{ print $NF }' | sed 's/,\]/\]/g' )
-    if [ ${homo} == "[]" ]; then
+    if [ "${homo}" == "[]" ]; then
       homo="."
     fi
   else
@@ -420,7 +420,7 @@ while read chr start end eID count_union samples_union cluster_ID count_cluster 
   #Get predicted homozygoes (deletions only)
   if [ ${cnvtype} == "del" ] && [ ${gRes} == "PASS" ]; then
     homo=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.log | fgrep "[" | awk '{ print $NF }' | sed 's/,\]/\]/g' )
-    if [ ${homo} == "[]" ]; then
+    if [ "${homo}" == "[]" ]; then
       homo="."
     fi
   else
@@ -455,7 +455,7 @@ while read chr start end eID count_union samples_union cluster_ID count_cluster 
       gCheck="CHECK"
     fi
     echo -e "${chr}\t${start}\t${end}\t${eID}\t${group}\t${conf}\t${count_union}\t${samples_union}\t${cluster_ID}\t${count_cluster}\t${samples_cluster}\t${cnMOPS_ID}\t${count_cnMOPS}\t${samples_cnMOPS}\t${cnMOPS_consensus}\t${gRes}\t${gConcordance}\t${pval}\t${power}\t${homo}\t${gCheck}"
-  #group B2 is genotyping fail and limited to < 25kb
+  #group B2 is genotyping fail
   else
      #Group B2B has ≥ 30% blacklist overlap
     if [ $( echo "$( bedtools coverage -a ${CNV_BLACKLIST} -b <( echo -e "${chr}\t${start}\t${end}" ) | awk '{ print $NF }' ) >= 0.3" | bc ) -eq 1 ]; then
@@ -468,9 +468,7 @@ while read chr start end eID count_union samples_union cluster_ID count_cluster 
       conf="LOW"
       gCheck="."
     fi
-    if [ $( echo "${end}-${start}" | bc ) -le 25000 ]; then
-      echo -e "${chr}\t${start}\t${end}\t${eID}\t${group}\t${conf}\t${count_union}\t${samples_union}\t${cluster_ID}\t${count_cluster}\t${samples_cluster}\t${cnMOPS_ID}\t${count_cnMOPS}\t${samples_cnMOPS}\t${cnMOPS_consensus}\t${gRes}\t${gConcordance}\t${pval}\t${power}\t${homo}\t${gCheck}"
-    fi
+    echo -e "${chr}\t${start}\t${end}\t${eID}\t${group}\t${conf}\t${count_union}\t${samples_union}\t${cluster_ID}\t${count_cluster}\t${samples_cluster}\t${cnMOPS_ID}\t${count_cnMOPS}\t${samples_cnMOPS}\t${cnMOPS_consensus}\t${gRes}\t${gConcordance}\t${pval}\t${power}\t${homo}\t${gCheck}"
   fi
 done < ${gB_tmp} >> ${preOut}
 
@@ -493,7 +491,7 @@ while read chr start end eID count_union samples_union cluster_ID count_cluster 
   #Get predicted homozygoes (deletions only)
   if [ ${cnvtype} == "del" ] && [ ${gRes} == "PASS" ]; then
     homo=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.log | fgrep "[" | awk '{ print $NF }' | sed 's/,\]/\]/g' )
-    if [ ${homo} == "[]" ]; then
+    if [ "${homo}" == "[]" ]; then
       homo="."
     fi
   else
@@ -514,7 +512,7 @@ while read chr start end eID count_union samples_union cluster_ID count_cluster 
     fi
     power=0
   fi
-  #group C1 is genotyping pass and restricted to ≥ 10kb
+  #group C1 is genotyping pass
   if [ ${gRes} == "PASS" ]; then
     #Group C1B has ≥ 30% blacklist overlap
     if [ $( echo "$( bedtools coverage -a ${CNV_BLACKLIST} -b <( echo -e "${chr}\t${start}\t${end}" ) | awk '{ print $NF }' ) >= 0.3" | bc ) -eq 1 ]; then
@@ -532,10 +530,8 @@ while read chr start end eID count_union samples_union cluster_ID count_cluster 
         gCheck="."
       fi
     fi
-    if [ $( echo "${end}-${start}" | bc ) -ge 10000 ]; then
-      echo -e "${chr}\t${start}\t${end}\t${eID}\t${group}\t${conf}\t${count_union}\t${samples_union}\t${cluster_ID}\t${count_cluster}\t${samples_cluster}\t${cnMOPS_ID}\t${count_cnMOPS}\t${samples_cnMOPS}\t${cnMOPS_consensus}\t${gRes}\t${gConcordance}\t${pval}\t${power}\t${homo}\t${gCheck}"
-    fi
-  #group C2 is genotyping fail and restricted to ≥ 50kb
+    echo -e "${chr}\t${start}\t${end}\t${eID}\t${group}\t${conf}\t${count_union}\t${samples_union}\t${cluster_ID}\t${count_cluster}\t${samples_cluster}\t${cnMOPS_ID}\t${count_cnMOPS}\t${samples_cnMOPS}\t${cnMOPS_consensus}\t${gRes}\t${gConcordance}\t${pval}\t${power}\t${homo}\t${gCheck}"
+  #group C2 is genotyping fail
   else
      #Group C2B has ≥ 30% blacklist overlap
     if [ $( echo "$( bedtools coverage -a ${CNV_BLACKLIST} -b <( echo -e "${chr}\t${start}\t${end}" ) | awk '{ print $NF }' ) >= 0.3" | bc ) -eq 1 ]; then
@@ -548,17 +544,30 @@ while read chr start end eID count_union samples_union cluster_ID count_cluster 
       conf="MED"
       gCheck="CHECK"
     fi
-    if [ $( echo "${end}-${start}" | bc ) -ge 50000 ]; then
-      echo -e "${chr}\t${start}\t${end}\t${eID}\t${group}\t${conf}\t${count_union}\t${samples_union}\t${cluster_ID}\t${count_cluster}\t${samples_cluster}\t${cnMOPS_ID}\t${count_cnMOPS}\t${samples_cnMOPS}\t${cnMOPS_consensus}\t${gRes}\t${gConcordance}\t${pval}\t${power}\t${homo}\t${gCheck}"
-    fi
+    echo -e "${chr}\t${start}\t${end}\t${eID}\t${group}\t${conf}\t${count_union}\t${samples_union}\t${cluster_ID}\t${count_cluster}\t${samples_cluster}\t${cnMOPS_ID}\t${count_cnMOPS}\t${samples_cnMOPS}\t${cnMOPS_consensus}\t${gRes}\t${gConcordance}\t${pval}\t${power}\t${homo}\t${gCheck}"
   fi
 done < ${gC_tmp} >> ${preOut}
+
+#Size Filters
+#All A groups have no size filtering
+awk -v OFS="\t" '$5 ~ /A/ { print $0 }' ${preOut} > ${preOut}2
+#Group B1 has no size filtering
+awk -v OFS="\t" '$5 ~ /B1/ { print $0 }' ${preOut} >> ${preOut}2
+#Group B2 < 25kb
+awk -v OFS="\t" '$5 ~ /B2/ { print $0 }' ${preOut} | awk '{ if ($3-$2<25000) print $0 }' >> ${preOut}2
+#Group C1 ≥ 10kb
+awk -v OFS="\t" '$5 ~ /C1/ { print $0 }' ${preOut} | awk '{ if ($3-$2>=10000) print $0 }' >> ${preOut}2
+#Group C2 ≥ 50kb
+awk -v OFS="\t" '$5 ~ /C2/ { print $0 }' ${preOut} | awk '{ if ($3-$2>=50000) print $0 }' >> ${preOut}2
 
 #Write header to output file
 echo -e "#Chr\tStart\tEnd\tID\tGroup\tConfidence\tObservations\tSamples\tCluster_IDs\tCluster_Observations\tCluster_Samples\tcnMOPS_IDs\tcnMOPS_Observations\tcnMOPS_Samples\tcnMOPS_Concordance\tGenotyping\tGenotyping_Concordance\tGenotyping_pVal\tGenotyping_Power\tHomozygotes\tManual_Check" > ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_${cnvtype}s.bed
 
 #Sort pre-output file
-sort -Vk1,1 -k2,2n -k3,3n ${preOut} >> ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_${cnvtype}s.bed
+sort -Vk1,1 -k2,2n -k3,3n ${preOut}2 >> ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_${cnvtype}s.bed
+
+#Move prefilter file to WRKDIR
+mv ${preOut}2 ${WRKDIR}/consensusCNV/${COHORT_ID}_consensus_${cnvtype}s.preFilter.bed
 
 #Clean up
 rm ${val_clust} ${cnMOPS} ${overlap} ${cnMOPS_to_remove} ${samp_union} ${samp_cnMOPS} ${samp_clust} ${preOut}
