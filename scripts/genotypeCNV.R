@@ -359,7 +359,14 @@ clusterSds[i]<-median(colSds)
   cat(chr,start,end,ID," median separation k-means solution:",median(ClustSolStats$separation))#print(ClustSolStats)
   cat(" n=",ClustSolStats$n," cluster.number=",ClustSolStats$cluster.number," cluster.size=",ClustSolStats$cluster.size," min.cluster.size=",ClustSolStats$min.cluster.size," noisen=",ClustSolStats$noisen," diameter=",ClustSolStats$diameter," average.distance=",ClustSolStats$average.distance," median.distance=",ClustSolStats$median.distance," separation=",ClustSolStats$separation," average.toother=",ClustSolStats$average.toother," separation.matrix=",ClustSolStats$separation.matrix," ave.between.matrix=",ClustSolStats$ave.between.matrix," average.between=",ClustSolStats$average.between," average.within=",ClustSolStats$average.within," n.between=",ClustSolStats$n.between," n.within=",ClustSolStats$n.within," max.diameter=",ClustSolStats$max.diameter," min.separation=",ClustSolStats$min.separation," within.cluster.ss=",ClustSolStats$within.cluster.ss," clus.avg.silwidths=",ClustSolStats$clus.avg.silwidths," avg.silwidth=",ClustSolStats$avg.silwidth," g2=",ClustSolStats$g2," g3=",ClustSolStats$g3," pearsongamma=",ClustSolStats$pearsongamma," dunn=",ClustSolStats$dunn," dunn2=",ClustSolStats$dunn2," entropy=",ClustSolStats$entropy," wb.ratio=",ClustSolStats$wb.ratio," ch=",ClustSolStats$ch," cwidegap=",ClustSolStats$cwidegap," widestgap=",ClustSolStats$widestgap," sindex=",ClustSolStats$sindex," corrected.rand=",ClustSolStats$corrected.rand," vi=",ClustSolStats$vi," median cluster sds and sd:",median(na.omit(clusterSds)),sd(na.omit(clusterSds)),"\n",sep="_")
 cat(chr,start,end,ID," median cluster sds and sd:",median(na.omit(clusterSds)),sd(na.omit(clusterSds)),"\n")
-
+if( median(ClustSolStats$separation)>0.1 && ClustSolStats$avg.silwidth>0.2 && ClustSolStats$pearsongamma>0.3 && ClustSolStats$dunn2>0.5 && ClustSolStats$wb.ratio<0.6 && median(na.omit(clusterSds))<0.2 )
+{
+	cat(chr,start,end,ID," PASS k-means metrics\n")
+}
+else
+{
+	cat(chr,start,end,ID," FAIL k-means metrics\n")
+}
   ##cmeans using k-means optimal centers as determined above with little room for adjustment by default, mainly to get the "membership" probability of cluster assignment confidence
   if(nrow(kmean_matrix)>1)
   {b<-cmeans(kmean_matrix,k$centers,method="ufcl")# ,m=2.2,rate.par=1)
@@ -594,7 +601,7 @@ cat(chr,start,end,ID," median cluster sds and sd:",median(na.omit(clusterSds)),s
           genotype<-t(genotype1)
       }
     }
-          if(oneSample==TRUE || median(power)<0.8)
+          if(oneSample==TRUE || median(power)<0.8 || groupC==TRUE)
           {
 		j=1;
                 for(i in c(5:ncol(genotype)))
