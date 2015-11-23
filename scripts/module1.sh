@@ -73,6 +73,8 @@ cat ${TMPDIR}/build.copies.tmp >> ${OUTDIR}/QC/cohort/${COHORT_ID}.aneuploidyChe
 rm ${TMPDIR}/build.fractions.tmp ${TMPDIR}/build.copies.tmp
 
 #Plot aneuploidy check
+mkdir ${OUTDIR}/plots/AneuploidyCheck
+Rscript ${liWGS_SV}/scripts/plotAneuCheck.R ${OUTDIR}/QC/cohort/${COHORT_ID}.aneuploidyCheck.fractions.txt ${OUTDIR}/QC/cohort/${COHORT_ID}.aneuploidyCheck.copies.txt ${OUTDIR}/plots/AneuploidyCheck/${COHORT_ID}.aneu.fractions.pdf ${OUTDIR}/plots/AneuploidyCheck/${COHORT_ID}.aneu.counts.pdf
 
 #Run dosage Z-score
 ID=$( head -n1 ${samples_list} | cut -f1 )

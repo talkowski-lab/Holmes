@@ -61,13 +61,11 @@ for(i in c(1:24)){
          ybottom=par("usr")[3],ytop=par("usr")[4],
          col="gray95",border="gray80")
   }
-  points(x=jitter(rep(i,nrow(cop)),amount=0.25),y=frac[,i],col=rep(c("orange","forestgreen"),12)[i],cex=0.5)
 }
-points(c(1:24),exp_frac_3,pch="-",col="blue",cex=2.5)
-points(c(1:24),exp_frac_2,pch="-",cex=2.5)
-points(c(1:24),exp_frac_1,pch="-",col="red",cex=2.5)
+abline(h=c(0,1,2,3),lwd=c(2,1,1,1),col=c("red","red","black","blue"),lty=c(2,1,1,1))
+for(i in c(1:24)){
+  points(x=jitter(rep(i,nrow(cop)),amount=0.25),y=cop[,i],col=rep(c("orange","forestgreen"),12)[i],cex=0.5)
+}
 axis(1,at=c(1:24),labels=c(1:22,"X","Y"))
-axis(2,at=seq(0,0.12,by=0.02),labels=paste(seq(0,12,by=2),"%"),las=2)
+axis(2,at=seq(0,3,by=0.5),las=2)
 dev.off()
-
-
