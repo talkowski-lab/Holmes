@@ -359,7 +359,7 @@ clusterSds[i]<-median(colSds)
   cat(chr,start,end,ID," median separation k-means solution:",median(ClustSolStats$separation))#print(ClustSolStats)
   cat(" n=",ClustSolStats$n," cluster.number=",ClustSolStats$cluster.number," cluster.size=",ClustSolStats$cluster.size," min.cluster.size=",ClustSolStats$min.cluster.size," noisen=",ClustSolStats$noisen," diameter=",ClustSolStats$diameter," average.distance=",ClustSolStats$average.distance," median.distance=",ClustSolStats$median.distance," separation=",ClustSolStats$separation," average.toother=",ClustSolStats$average.toother," separation.matrix=",ClustSolStats$separation.matrix," ave.between.matrix=",ClustSolStats$ave.between.matrix," average.between=",ClustSolStats$average.between," average.within=",ClustSolStats$average.within," n.between=",ClustSolStats$n.between," n.within=",ClustSolStats$n.within," max.diameter=",ClustSolStats$max.diameter," min.separation=",ClustSolStats$min.separation," within.cluster.ss=",ClustSolStats$within.cluster.ss," clus.avg.silwidths=",ClustSolStats$clus.avg.silwidths," avg.silwidth=",ClustSolStats$avg.silwidth," g2=",ClustSolStats$g2," g3=",ClustSolStats$g3," pearsongamma=",ClustSolStats$pearsongamma," dunn=",ClustSolStats$dunn," dunn2=",ClustSolStats$dunn2," entropy=",ClustSolStats$entropy," wb.ratio=",ClustSolStats$wb.ratio," ch=",ClustSolStats$ch," cwidegap=",ClustSolStats$cwidegap," widestgap=",ClustSolStats$widestgap," sindex=",ClustSolStats$sindex," corrected.rand=",ClustSolStats$corrected.rand," vi=",ClustSolStats$vi," median cluster sds and sd:",median(na.omit(clusterSds)),sd(na.omit(clusterSds)),"\n",sep="_")
 cat(chr,start,end,ID," median cluster sds and sd:",median(na.omit(clusterSds)),sd(na.omit(clusterSds)),"\n")
-if( median(ClustSolStats$separation)>0.1 && ClustSolStats$avg.silwidth>0.2 && ClustSolStats$pearsongamma>0.3 && ClustSolStats$dunn2>0.5 && ClustSolStats$wb.ratio<0.6 && median(na.omit(clusterSds))<0.2 )
+if( exists("ClustSolStats$separation") && median(ClustSolStats$separation)>0.1 && ClustSolStats$avg.silwidth>0.2 && ClustSolStats$pearsongamma>0.3 && ClustSolStats$dunn2>0.5 && ClustSolStats$wb.ratio<0.6 && median(na.omit(clusterSds))<0.2 )
 {
 	cat(chr,start,end,ID," PASS k-means metrics\n")
 }
@@ -568,7 +568,7 @@ else
    } 
     cat("median p:",median(Ttests)," median power:",median(power)," median perm:",median(as.numeric(PermTTests[!is.na(PermTTests)]))," ")
     cat("separation=",median(ClustSolStats$separation)," avg.silwidth=",ClustSolStats$avg.silwidth," pearsongamma=",ClustSolStats$pearsongamma," dunn=",ClustSolStats$dunn," dunn2=",ClustSolStats$dunn2," wb.ratio=",ClustSolStats$wb.ratio," ")
-    if(median(power)>=0.8)
+    if(median(power)>=0.8 && groupC==FALSE)
     {
 	cat("\n")
     }
