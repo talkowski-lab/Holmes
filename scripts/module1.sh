@@ -30,7 +30,12 @@ done < ${samples_list}
 
 #Submit sex check
 while read ID bam sex; do
-  bsub -u nobody -o ${OUTDIR}/logs/dosageCheck.log -e ${OUTDIR}/logs/dosageCheck.log -sla miket_sc -q short -J ${COHORT_ID}_QC "${liWGS_SV}/scripts/sexCheck.sh ${ID} ${WRKDIR}/${ID}/${ID}.bam ${params}"
+  bsub -u nobody -o ${OUTDIR}/logs/sexCheck.log -e ${OUTDIR}/logs/sexCheck.log -sla miket_sc -q short -J ${COHORT_ID}_QC "${liWGS_SV}/scripts/sexCheck.sh ${ID} ${WRKDIR}/${ID}/${ID}.bam ${params}"
+done < ${samples_list}
+
+#Submit aneuploidy check
+while read ID bam sex; do
+  bsub -u nobody -o ${OUTDIR}/logs/aneuploidyCheck.log -e ${OUTDIR}/logs/aneuploidyCheck.log -sla miket_sc -q short -J ${COHORT_ID}_QC "${liWGS_SV}/scripts/chrCopyCount.sh ${ID} ${WRKDIR}/${ID}/${ID}.bam ${params}"
 done < ${samples_list}
 
 #Gate until complete; 20 sec check; 5 min report
@@ -46,6 +51,28 @@ until [[ $GATEcount == 0 ]]; do
     GATEwait=0
   fi
 done
+
+#Parse aneuploidy check
+paste <( echo -e "chr\texpected" ) <( cut -f1 ${samples_list} | paste -s ) > ${OUTDIR}/QC/cohort/${COHORT_ID}.aneuploidyCheck.fractions.txt
+paste <( echo -e "chr\texpected" ) <( cut -f1 ${samples_list} | paste -s ) > ${OUTDIR}/QC/cohort/${COHORT_ID}.aneuploidyCheck.copies.txt
+echo -e "$( seq 1 22 )\nX\nY" > ${TMPDIR}/build.fractions.tmp
+echo -e "$( seq 1 22 )\nX\nY" > ${TMPDIR}/build.copies.tmp
+ID=$( head -n1 ${samples_list} | cut -f1 )
+paste ${TMPDIR}/build.fractions.tmp <( fgrep -v "#" ${OUTDIR}/QC/sample/${ID}/${ID}.aneuploidyCheck | sed '/^$/d' | cut -f5 ) > ${TMPDIR}/build.fractions.tmp2
+paste ${TMPDIR}/build.copies.tmp <( perl -E "say \"2\n\" x 24" | sed '/^$/d' ) > ${TMPDIR}/build.copies.tmp2
+mv ${TMPDIR}/build.fractions.tmp2 ${TMPDIR}/build.fractions.tmp
+mv ${TMPDIR}/build.copies.tmp2 ${TMPDIR}/build.copies.tmp
+while read ID bam sex; do
+  paste ${TMPDIR}/build.fractions.tmp <( fgrep -v "#" ${OUTDIR}/QC/sample/${ID}/${ID}.aneuploidyCheck | sed '/^$/d' | cut -f4 ) > ${TMPDIR}/build.fractions.tmp2
+  paste ${TMPDIR}/build.copies.tmp <( fgrep -v "#" ${OUTDIR}/QC/sample/${ID}/${ID}.aneuploidyCheck | sed '/^$/d' | cut -f6 ) > ${TMPDIR}/build.copies.tmp2
+  mv ${TMPDIR}/build.fractions.tmp2 ${TMPDIR}/build.fractions.tmp
+  mv ${TMPDIR}/build.copies.tmp2 ${TMPDIR}/build.copies.tmp
+done < ${samples_list}
+cat ${TMPDIR}/build.fractions.tmp >> ${OUTDIR}/QC/cohort/${COHORT_ID}.aneuploidyCheck.fractions.txt
+cat ${TMPDIR}/build.copies.tmp >> ${OUTDIR}/QC/cohort/${COHORT_ID}.aneuploidyCheck.copies.txt
+rm ${TMPDIR}/build.fractions.tmp ${TMPDIR}/build.copies.tmp
+
+#Plot aneuploidy check
 
 #Run dosage Z-score
 ID=$( head -n1 ${samples_list} | cut -f1 )

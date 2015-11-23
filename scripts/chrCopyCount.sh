@@ -26,6 +26,6 @@ for contig in $( seq 1 22 ) X Y; do
   count=$( sambamba view -c -F 'not secondary_alignment and not duplicate' ${bam} ${contig} )
   frac_ex=$( echo -e "scale=6; (( $( fgrep -w "SN:${contig}" ${DICT} | cut -f3 | cut -d\: -f2 ) / ${genome_size} ))" | bc )
   frac_obs=$( echo -e "scale=6; (( ${count} / ${total} ))" | bc )
-  copies=$( echo -e "scale=2; (( 2 * ${frac_obs} / ${frac_ex} ))" | bc | awk '{printf "%.1f\n",$1}' )
+  copies=$( echo -e "scale=3; (( 2 * ${frac_obs} / ${frac_ex} ))" | bc | awk '{printf "%.3f\n",$1}' )
   echo -e "${contig}\t${total}\t${count}\t${frac_obs}\t${frac_ex}\t${copies}"
 done >> ${OUTDIR}/QC/sample/${ID}/${ID}.aneuploidyCheck
