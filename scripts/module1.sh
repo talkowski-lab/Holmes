@@ -35,7 +35,7 @@ done < ${samples_list}
 
 #Submit aneuploidy check
 while read ID bam sex; do
-  bsub -u nobody -o ${OUTDIR}/logs/aneuploidyCheck.log -e ${OUTDIR}/logs/aneuploidyCheck.log -sla miket_sc -q short -J ${COHORT_ID}_QC "${liWGS_SV}/scripts/chrCopyCount.sh ${ID} ${WRKDIR}/${ID}/${ID}.bam ${params}"
+  bsub -u nobody -o ${OUTDIR}/logs/aneuploidyCheck.log -e ${OUTDIR}/logs/aneuploidyCheck.log -sla miket_sc -q vshort -J ${COHORT_ID}_QC "${liWGS_SV}/scripts/chrCopyCount.sh ${ID} ${WRKDIR}/${ID}/${ID}.bam ${params}"
 done < ${samples_list}
 
 #Gate until complete; 20 sec check; 5 min report
