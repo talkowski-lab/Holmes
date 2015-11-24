@@ -90,6 +90,9 @@ cut -f1-4,8 ${cnMOPS_raw} | sed 's/[\t]+/\t/g' > ${cnMOPS}
 #Get max insert size in cohort; will automatically force cluster-based coordinates to be at least this distance apart if smaller
 max_insert=$( fgrep -v "#" ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics | cut -f9 | sort -nrk1,1 | head -n1 )
 
+#Get number of samples in cohort
+nsamp_all=$( cat ${samples_list} | wc -l )
+
 #Get sex indexes; used for genotyping X and Y
 Midx=$( echo "$( awk -v OFS="\t" '{ print NR, $1 }' ${samples_list} | fgrep -wf ${WRKDIR}/males.list | awk '{ print ($1)+3 }' )" | cat <( echo -e "1\n2\n3" ) - | paste -s -d, )
 Fidx=$( echo "$( awk -v OFS="\t" '{ print NR, $1 }' ${samples_list} | fgrep -wf ${WRKDIR}/females.list | awk '{ print ($1)+3 }' )" | cat <( echo -e "1\n2\n3" ) - | paste -s -d, )
@@ -321,33 +324,40 @@ while read chr start end eID count_union samples_union cluster_ID count_cluster 
   else
     gRes="FAIL"
   fi
-  #Get predicted homozygotes (deletions only)
-  if [ ${cnvtype} == "del" ] && [ ${gRes} == "PASS" ]; then
-    homo=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep "[" | awk '{ print $NF }' | sed 's/,\]/\]/g' )
-    if [ "${homo}" == "[]" ]; then
-      homo="."
-    fi
-  else
+  #Get predicted homozygous deletions, print "CHECK" if any found at duplication allele
+  homo=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep "[" | awk '{ print $NF }' | sed 's/,\]/\]/g' )
+  if [ "${homo}" == "[]" ]; then
     homo="."
   fi
-  #parse genotyping output with >2 samples
-  if [ $( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep -w ncol | wc -l ) -gt 0 ]; then
+  if [ ${cnvtype} == "dup" ] && [ ${homo} != "." ]; then
+    homo="CHECK"
+  fi
+  #reset genotyping metadata
+  unset pval
+  unset power
+  if [ $( cat ${samp_union} | wc -l ) -ge ${nsamp_all} ] || [ $( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep -w "No Data" | wc -l ) -gt 0 ]; then
+    #genotyping is impossible if call appears in all samples or if call has "no data"
+    pval="."
+    power="."
+  elif [ $( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep -w ncol | wc -l ) -gt 0 ] && [ $( cat ${samp_union} | wc -l ) -gt 1 ]; then
+    #Get permuted p-value if power >= 0.8
     power=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep -w ncol | sed 's/median\ power\:/\n/g' | tail -n1 | awk '{ print $1 }' )
     if [ $( echo "${power} >= 0.8" | bc ) -eq 1 ]; then
       pval=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep -w ncol | sed 's/median\ perm\:/\n/g' | tail -n1 | awk '{ print $1 }' )
+    #Otherwise get median pval of all samples
     else
       pval=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep -w ncol | awk '{ print $NF }' | sed -e 's/\:/\t/g' -e 's/\#/\t/g' -e 's/\//\n/g' | sed '/^$/d' | cut -f3 | sort -nk1,1 | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' )
     fi
-  #parse genotyping output with 1 sample
-  elif [ $( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep -w "No Data" | wc -l ) -gt 0 ]; then
-    pval="."
-    power="."
   else
+    #parse genotyping output with 1 sample
     pval=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep -w Cannot | awk '{ print $NF }' | cut -d\# -f2 | tr -d "/" )
-    if [ -z ${pval} ]; then
-      pval="."
-    fi
-    power=0
+  fi
+  #print pvalue and power errors if not previously set
+  if [ -z ${pval} ]; then
+    pval="ERR"
+  fi
+  if [ -z ${power} ]; then
+    power="ERR"
   fi
   #Groups A1 & A2 have 100% cnMOPS concordance
   if [ $( echo "${cnMOPS_consensus} == 1" | bc ) -eq 1 ]; then
@@ -439,35 +449,41 @@ while read chr start end eID count_union samples_union cluster_ID count_cluster 
   else
     gRes="FAIL"
   fi
-  #Get predicted homozygotes (deletions only)
-  if [ ${cnvtype} == "del" ] && [ ${gRes} == "PASS" ]; then
-    homo=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep "[" | awk '{ print $NF }' | sed 's/,\]/\]/g' )
-    if [ "${homo}" == "[]" ]; then
-      homo="."
-    fi
-  else
+  #Get predicted homozygous deletions, print "CHECK" if any found at duplication allele
+  homo=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep "[" | awk '{ print $NF }' | sed 's/,\]/\]/g' )
+  if [ "${homo}" == "[]" ]; then
     homo="."
   fi
-  #parse genotyping output with >2 samples
-  if [ $( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep -w ncol | wc -l ) -gt 0 ]; then
+  if [ ${cnvtype} == "dup" ] && [ ${homo} != "." ]; then
+    homo="CHECK"
+  fi
+  #reset genotyping metadata
+  unset pval
+  unset power
+  if [ $( cat ${samp_union} | wc -l ) -ge ${nsamp_all} ] || [ $( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep -w "No Data" | wc -l ) -gt 0 ]; then
+    #genotyping is impossible if call appears in all samples or if call has "no data"
+    pval="."
+    power="."
+  elif [ $( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep -w ncol | wc -l ) -gt 0 ] && [ $( cat ${samp_union} | wc -l ) -gt 1 ]; then
+    #Get permuted p-value if power >= 0.8
     power=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep -w ncol | sed 's/median\ power\:/\n/g' | tail -n1 | awk '{ print $1 }' )
     if [ $( echo "${power} >= 0.8" | bc ) -eq 1 ]; then
       pval=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep -w ncol | sed 's/median\ perm\:/\n/g' | tail -n1 | awk '{ print $1 }' )
+    #Otherwise get median pval of all samples
     else
       pval=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep -w ncol | awk '{ print $NF }' | sed -e 's/\:/\t/g' -e 's/\#/\t/g' -e 's/\//\n/g' | sed '/^$/d' | cut -f3 | sort -nk1,1 | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' )
     fi
-    #parse genotyping output with 1 sample
-  elif [ $( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep -w "No Data" | wc -l ) -gt 0 ]; then
-    pval="."
-    power="."
   else
+    #parse genotyping output with 1 sample
     pval=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep -w Cannot | awk '{ print $NF }' | cut -d\# -f2 | tr -d "/" )
-    if [ -z ${pval} ]; then
-      pval="."
-    fi
-    power=0
   fi
-  #group B1 is genotyping pass
+  #print pvalue and power errors if not previously set
+  if [ -z ${pval} ]; then
+    pval="ERR"
+  fi
+  if [ -z ${power} ]; then
+    power="ERR"
+  fi  #group B1 is genotyping pass
   if [ ${gRes} == "PASS" ]; then
     #Group B1B has ≥ 30% blacklist overlap
     if [ $( echo "$( bedtools coverage -a ${CNV_BLACKLIST} -b <( echo -e "${chr}\t${start}\t${end}" ) | awk '{ print $NF }' ) >= 0.3" | bc ) -eq 1 ]; then
@@ -516,23 +532,25 @@ while read chr start end eID count_union samples_union cluster_ID count_cluster 
   else
     gRes="FAIL"
   fi
-  #Get predicted homozygotes (deletions only)
-  if [ ${cnvtype} == "del" ] && [ ${gRes} == "PASS" ]; then
-    homo=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.C.log | fgrep "[" | awk '{ print $NF }' | sed 's/,\]/\]/g' )
-    if [ "${homo}" == "[]" ]; then
-      homo="."
-    fi
-  else
+  #Get predicted homozygous deletions, print "CHECK" if any found at duplication allele
+  homo=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.notC.log | fgrep "[" | awk '{ print $NF }' | sed 's/,\]/\]/g' )
+  if [ "${homo}" == "[]" ]; then
     homo="."
   fi
+  if [ ${cnvtype} == "dup" ] && [ ${homo} != "." ]; then
+    homo="CHECK"
+  fi
   #parse genotyping output -- report median p among all samples with CN!=2 && CN!=-9, unless genotyping is CN=2 for all samples, in which case report the median p among all samples
-  if [ $( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.C.log | fgrep -w ncol | wc -l ) -gt 0 ]; then
-    power="."
-    if [ ${gRes} == "PASS" ]; then
-      pval=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.C.log | fgrep -w ncol | awk '{ print $NF }' | sed -e 's/\:/\t/g' -e 's/\#/\t/g' -e 's/\//\n/g' | sed '/^$/d' | fgrep -wf ${overlap} | cut -f3 | sort -nk1,1 | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' )
-    else
-      pval=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.C.log | fgrep -w ncol | awk '{ print $NF }' | sed -e 's/\:/\t/g' -e 's/\#/\t/g' -e 's/\//\n/g' | sed '/^$/d' | cut -f3 | sort -nk1,1 | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' )
-    fi
+  unset pval
+  power="." #power is always NA for groupC
+  if [ ${gRes} == "PASS" ]; then
+    pval=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.C.log | grep -e 'ncol\|Cannot' | awk '{ print $NF }' | sed -e 's/\:/\t/g' -e 's/\#/\t/g' -e 's/\//\n/g' | sed '/^$/d' | awk '{ if ($1!=2 && $2!=-9) print $3 }' | sort -nk1,1 | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' )
+  else
+    pval=$( fgrep -w ${eID} ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${chr}/SFARIEcoV5.${cnvtype}.genotyping.C.log | grep -e 'ncol\|Cannot' | awk '{ print $NF }' | sed -e 's/\:/\t/g' -e 's/\#/\t/g' -e 's/\//\n/g' | sed '/^$/d' | cut -f3 | sort -nk1,1 | perl -e '$d=.5;@l=<>;print $l[int($d*$#l)]' )
+  fi
+  #print error if pval is unset
+  if [ -z ${pval} ]; then
+    pval="ERR"
   fi
   #group C1 is genotyping pass, but only samples with pass genotyping are retained in call (due to individual z-testing)
   if [ ${gRes} == "PASS" ]; then
