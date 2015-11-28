@@ -91,11 +91,12 @@ if [ $# -eq 8 ]; then
 
   #Iterate over all IDs in events file
   while read eID; do
+    echo "${eID}"
     #store call & chr
     call=$( awk -v eID=${eID} '{ if ($7==eID) print $21 }' ${events} )
     chr=$( awk -v eID=${eID} '{ if ($7==eID) print $1 }' ${events} )
     #write original cluster to TMPCLST
-    cidx=$( echo "${eID}" | sed 's/inversion_/\t/g' | awk -v FS="_" '{ print $NF }' )
+    cidx=$( echo "${eID}" | sed 's/inversion_/\t/g' | awk '{ print $NF }' )
     awk -v OFS="\t" -v cidx=${cidx} '{ if ($1==cidx) print $0 }' ${clusters} > ${TMPCLST}
     #write samples to SAMPS
     awk -v eID=${eID} '{ if ($7==eID) print $20 }' ${events} | tr -d "[]" | sed 's/,/\n/g' > ${SAMPS}
