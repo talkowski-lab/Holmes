@@ -10,6 +10,11 @@
 samples_list=$1
 params=$2
 
+#Ensure correct version of gcc for anaconda dependencies
+module rm gcc/4.9.0
+module rm gcc-4.4
+module load gcc/4.9.0
+
 #Source params file
 echo -e "STATUS [$(date)]: Loading parameters..."
 . ${params}
@@ -77,6 +82,8 @@ done
 ##STAGE 2a: module 4
 echo -e "STATUS [$(date)]: PHASE 1a complete; Beginning PHASE 2a..."
 #Submit module 4 (physical depth CNV calling)
+#If DNAcopy is included in module 4, this job to go to big for creation of DNAcopy reference profiles (requires > 60GB memory for ~300 samples)
+#As of Nov 30, 2015, DNAcopy is not run by default because it's too slow, too memory-intensive, and not highly informative. This decision can be revisited later on.
 bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module4.log -e ${OUTDIR}/logs/module4.log -u nobody -J ${COHORT_ID}_MODULE_4 "${liWGS_SV}/scripts/module4.sh ${samples_list} ${params}"
 
 #Gate until module 3 complete; 20 sec check; 5 min report
