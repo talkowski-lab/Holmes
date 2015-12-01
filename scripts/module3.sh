@@ -16,7 +16,10 @@ if ! [ ${pre_bamstat}=="TRUE" ] || ! [ -e ${bamstat_paths} ]; then
 
   #Submit bamstat job per sample
   while read ID bam sex; do
-    bsub -q normal -o ${OUTDIR}/logs/bamstat.log -e ${OUTDIR}/logs/bamstat.log -sla miket_sc -J ${COHORT_ID}_bamstat "${liWGS_SV}/scripts/bamstat.sh -n -s 3 -i ${WRKDIR}/${ID}/${ID}.bam -o ${WRKDIR}/${ID}/bamstat/" 
+    #Syntax for running old bamstat:
+    # bsub -q normal -o ${OUTDIR}/logs/bamstat.log -e ${OUTDIR}/logs/bamstat.log -sla miket_sc -J ${COHORT_ID}_bamstat "${liWGS_SV}/scripts/bamstat.sh -n -s 3 -i ${WRKDIR}/${ID}/${ID}.bam -o ${WRKDIR}/${ID}/bamstat/" 
+    #Instead, run Matt's new bamstat/RPC combo:
+    bsub -q normal -o ${OUTDIR}/logs/bamstat.log -e ${OUTDIR}/logs/bamstat.log -sla miket_sc -J ${COHORT_ID}_bamstat "module load sambamba/0.5.8; mkdir ${WRKDIR}/${ID}/bamstat; cd ${WRKDIR}/${ID}/bamstat/; ${liWGS_SV}/rpc_single.sh -m ${OUTDIR}/QC/sample/${ID}/${ID}.insert_size_metrics ${ID} ${WRKDIR}/${ID}/${ID}.bam"
   done < ${samples_list}
 
   #Gate until complete; 20 sec check; 5 min report
@@ -38,6 +41,13 @@ if ! [ ${pre_bamstat}=="TRUE" ] || ! [ -e ${bamstat_paths} ]; then
     rm ${WRKDIR}/${ID}/bamstat/*pairs*txt
   done < ${samples_list}
 
+  #Rename new bamstat files to be consistent with old naming convention
+  while read ID bam sex; do
+    mv ${WRKDIR}/${ID}/bamstat/*del*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_deletion_dX_q-1_sX.txt
+    mv ${WRKDIR}/${ID}/bamstat/*dup*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_insertion_dX_q-1_sX.txt
+    mv ${WRKDIR}/${ID}/bamstat/*ins*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_inversion_dX_q-1_sX.txt
+    mv ${WRKDIR}/${ID}/bamstat/*inv*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_transloc_dX_q-1_sX.txt
+  done < ${samples_list}
 else
 
   #copy clusters and stats file from previous bamstat run
