@@ -25,13 +25,9 @@ while read ID bam sex; do
   echo -e "${ID}\t${WRKDIR}/${ID}/${ID}.coverage.bed.gz"
 done < ${samples_list} > ${WRKDIR}/classifier/classifier.icov.list
 
-#Create fake bamstat stats.file for interpretation of insert sizes
-while read ID bam sex; do
-  
-
 #Run classifier
 cd ${WRKDIR}/classifier
-bsub -u nobody -q normal -sla miket_sc -o ${OUTDIR}/logs/classifier.log -e ${OUTDIR}/logs/classifier.log -J ${COHORT_ID}_classifier "${CLASSIFIER_DIR}/run_classify.sh ${WRKDIR}/classifier/classifier.samples.list ${COHORT_ID} ${WRKDIR}/classifier/classifier.icov.list"
+bsub -u nobody -q normal -sla miket_sc -o ${OUTDIR}/logs/classifier.log -e ${OUTDIR}/logs/classifier.log -J ${COHORT_ID}_classifier "${CLASSIFIER_DIR}/run_classify.sh -m ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics ${WRKDIR}/classifier/classifier.samples.list ${COHORT_ID} ${WRKDIR}/classifier/classifier.icov.list"
 
 #Gate until complete; 20 sec check; 5 min report
 GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_classifier" | wc -l )
