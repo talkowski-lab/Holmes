@@ -44,7 +44,17 @@ else
   while read ID bam sex; do
     mkdir ${WRKDIR}/${ID}/bamstat/
     bpath=$( fgrep -w ${ID} ${bamstat_paths} | cut -f2 )
-    cp ${bpath}/*clusters* ${bpath}/stats.file ${WRKDIR}/${ID}/bamstat/
+    cp ${bpath}/*del*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_deletion_dX_q-1_sX.txt
+    if [ $( l ${bpath}/*dup*clusters* | wc -l ) -gt 0 ]; then
+      cp ${bpath}/*dup*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_insertion_dX_q-1_sX.txt
+    else
+      cp ${bpath}/*ins*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_insertion_dX_q-1_sX.txt
+    fi
+    cp ${bpath}/*inv*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_inversion_dX_q-1_sX.txt
+    if [ $( l ${bpath}/*tloc*clusters* | wc -l ) -gt 0 ]; then
+      cp ${bpath}/*tloc*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_transloc_dX_q-1_sX.txt
+    else
+      cp ${bpath}/*transloc*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_transloc_dX_q-1_sX.txt
+    fi
   done < ${samples_list}
-
 fi
