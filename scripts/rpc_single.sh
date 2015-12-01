@@ -11,14 +11,21 @@ set -e
 
 usage(){
 cat <<EOF
-Usage: rpc_single.sh (-d DIST | -m METRICS) SAMPLE BAM
+Usage: rpc_single.sh [-b] [-n N_MAD] (-d DIST | -m METRICS) SAMPLE BAM
 
 SAMPLE, BAM, and one of DIST and METRICS are required arguments. 
 
+If DIST is not provided, median insert size and MAD will be parsed from METRICS
+to compute clustering distance. Distance is computed as median + N_MAD * MAD.
+
 SAMPLE      Sample ID
-BAM         Bam file
+BAM         Bam file (coordinate sorted)
 -d DIST     Clustering distance (generally median insert + 7 MAD)
 -m METRICS  Metrics file output by Picard's InsertSizeMetrics
+-n N_MAD    Number of MAD added to median insert to compute minimum
+            clustering distance [7]
+-b          Convert rpc cluster files to bedpe format [FALSE]
+            (Requires compress_clusters.py script from pycluster repo)
 
 -h          Print this message
 EOF
@@ -26,13 +33,21 @@ EOF
 
 dist=""
 metrics=""
-while getopts ":d:m:h" opt; do
+bedpe=false
+n_mad=7
+while getopts ":d:m:bn:h" opt; do
   case "$opt" in
     d)
       dist=$OPTARG
       ;;
     m)
       metrics=$OPTARG
+      ;;
+    b)
+      bedpe=true
+      ;;
+    n)
+      n_mad=$OPTARG
       ;;
     h)
       usage
@@ -54,7 +69,7 @@ if [[ -z $dist ]]; then
   fi
 
   read median mad <<<$(head -n8 $metrics | tail -n1 | cut -f1-2)
-  dist=$(($median + 7 * $mad))
+  dist=$(($median + $n_mad * $mad))
 fi
 
 # Extract discordant reads from bam
@@ -79,3 +94,13 @@ for sv in del dup inv tloc; do
     ${sample}.${sv}.pairs.txt \
     ${sample}.${sv}.clusters.txt"
 done
+
+if [[ $bedpe ]]; then
+  for sv in del dup inv tloc; do
+    compress_clusters.py \
+      --no-split \
+      ${sample}.${sv}.clusters.txt \
+      ${sample}.${sv}.rpc.bedpe \
+      ${sample}_${sv}
+  done
+fi
