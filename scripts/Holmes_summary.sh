@@ -89,7 +89,7 @@ for dummy in 1; do
   cut -f1 ${OUTDIR}/data/clusters/${COHORT_ID}.inversion.clusters.txt | sort | uniq | sed '/^$/d' | wc -l | paste -d" " <( echo "      -Raw Clusters:" ) -
   fgrep Valid ${OUTDIR}/data/clusters/${COHORT_ID}.inversion.events.bedpe | wc -l | paste -d" " <( echo "      -Valid Clusters:" ) -
   echo " => Translocation"
-  cut -f1 ${OUTDIR}/data/clusters/${COHORT_ID}.insertion.clusters.txt | inversion | uniq | sed '/^$/d' | wc -l | paste -d" " <( echo "      -Raw Clusters:" ) -
+  cut -f1 ${OUTDIR}/data/clusters/${COHORT_ID}.insertion.clusters.txt | sort | uniq | sed '/^$/d' | wc -l | paste -d" " <( echo "      -Raw Clusters:" ) -
   fgrep Valid ${OUTDIR}/data/clusters/${COHORT_ID}.transloc.events.bedpe | wc -l | paste -d" " <( echo "      -Valid Clusters:" ) -
 done >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
 echo -e "\n\
@@ -162,7 +162,7 @@ sed '1d' ${OUTDIR}/SV_calls/${COHORT_ID}.complex.bed | awk -v nsamps=${nsamps_co
 sed '1d' ${OUTDIR}/SV_calls/${COHORT_ID}.unresolved.bed | awk -v nsamps=${nsamps_cohort} '{ print $6/nsamps }' > ${WRKDIR}/frequencies/unresolved.list
 sed '1d' ${OUTDIR}/SV_calls/${COHORT_ID}.insertion.bedpe | awk -v nsamps=${nsamps_cohort} '{ print $10/nsamps }' > ${WRKDIR}/frequencies/insertion.list
 sed '1d' ${OUTDIR}/SV_calls/${COHORT_ID}.inversion.bedpe | awk -v nsamps=${nsamps_cohort} '{ print $10/nsamps }' > ${WRKDIR}/frequencies/inversion.list
-Rscript ${liWGS_SV}/scripts/scrapeSVsizes.R ${WRKDIR}/frequencies/ ${OUTDIR}/plots/${COHORT_ID}.SVfrequencies.pdf
+Rscript ${liWGS_SV}/scripts/plotSVFreq.R ${WRKDIR}/frequencies/ ${OUTDIR}/plots/${COHORT_ID}.SVfrequencies.pdf
 #continue with report
 awk -v max=${maxCount} '{ if ($7<=max) print $4 }' ${OUTDIR}/SV_calls/${COHORT_ID}.deletion.bed > ${WRKDIR}/nonArtifact.variantIDs.list
 awk -v max=${maxCount} '{ if ($7<=max) print $4 }' ${OUTDIR}/SV_calls/${COHORT_ID}.duplication.bed >> ${WRKDIR}/nonArtifact.variantIDs.list
