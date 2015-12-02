@@ -12,7 +12,8 @@ params=$2
 . ${params}
 
 #Calculate maximum number of samples to correspond with $polyArt_filter
-maxCount=$( echo "(( ${polyArt_filter}*$( cat ${samples_list} | wc -l ) ))" | bc )
+nsamps_cohort=$( cat ${samples_list} | wc -l ) #number of samples in cohort
+maxCount=$( echo "(( ${polyArt_filter}*${nsamps_cohort} ))" | bc ) #max for $polyArt_filter
 
 #Create report with number of variants per sample
 echo -e "##liWGS-SV PIPELINE COHORT SV REPORT\n##RUN DATE: $( echo $(date) | awk '{ print $1, $2, $3, $NF }' )\n\
@@ -73,22 +74,22 @@ echo -e "\n\
 +----------------+" >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
 for dummy in 1; do
   echo " => Deletion"
-  tail -n2 ${OUTDIR}/data/clusters/${COHORT_ID}.deletion.clusters.txt | head -n1 | cut -f1 | paste -d" " <( echo "      -Raw Clusters:" ) -
+  cut -f1 ${OUTDIR}/data/clusters/${COHORT_ID}.deletion.clusters.txt | sort | uniq | sed '/^$/d' | wc -l | paste -d" " <( echo "      -Raw Clusters:" ) -
   fgrep Valid ${OUTDIR}/data/clusters/${COHORT_ID}.deletion.events.bedpe | wc -l | paste -d" " <( echo "      -Valid Clusters:" ) -
   while read ID bam sex; do
     cat ${WRKDIR}/${ID}/${ID}.cnMOPS.dels.bed | wc -l
   done < ${samples_list} | awk '{ sum+=$1 } END { print sum/NR }' | cut -f1 -d. | paste -d" " <( echo "      -Mean cnMOPS per Sample:" ) -
   echo " => Insertion"
-  tail -n2 ${OUTDIR}/data/clusters/${COHORT_ID}.insertion.clusters.txt | head -n1 | cut -f1 | paste -d" " <( echo "      -Raw Clusters:" ) -
+  cut -f1 ${OUTDIR}/data/clusters/${COHORT_ID}.insertion.clusters.txt | sort | uniq | sed '/^$/d' | wc -l | paste -d" " <( echo "      -Raw Clusters:" ) -
   fgrep Valid ${OUTDIR}/data/clusters/${COHORT_ID}.insertion.events.bedpe | wc -l | paste -d" " <( echo "      -Valid Clusters:" ) -
   while read ID bam sex; do
     cat ${WRKDIR}/${ID}/${ID}.cnMOPS.dups.bed | wc -l
   done < ${samples_list} | awk '{ sum+=$1 } END { print sum/NR }' | cut -f1 -d. | paste -d" " <( echo "      -Mean cnMOPS per Sample:" ) -
   echo " => Inversion"
-  tail -n2 ${OUTDIR}/data/clusters/${COHORT_ID}.inversion.clusters.txt | head -n1 | cut -f1 | paste -d" " <( echo "      -Raw Clusters:" ) -
+  cut -f1 ${OUTDIR}/data/clusters/${COHORT_ID}.inversion.clusters.txt | sort | uniq | sed '/^$/d' | wc -l | paste -d" " <( echo "      -Raw Clusters:" ) -
   fgrep Valid ${OUTDIR}/data/clusters/${COHORT_ID}.inversion.events.bedpe | wc -l | paste -d" " <( echo "      -Valid Clusters:" ) -
   echo " => Translocation"
-  tail -n2 ${OUTDIR}/data/clusters/${COHORT_ID}.transloc.clusters.txt | head -n1 | cut -f1 | paste -d" " <( echo "      -Raw Clusters:" ) -
+  cut -f1 ${OUTDIR}/data/clusters/${COHORT_ID}.insertion.clusters.txt | inversion | uniq | sed '/^$/d' | wc -l | paste -d" " <( echo "      -Raw Clusters:" ) -
   fgrep Valid ${OUTDIR}/data/clusters/${COHORT_ID}.transloc.events.bedpe | wc -l | paste -d" " <( echo "      -Valid Clusters:" ) -
 done >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
 echo -e "\n\
@@ -135,7 +136,34 @@ echo -e "\n\
 +----------+\n\
 | SV SIZES |\n\
 +----------+" >> ${OUTDIR}/${COHORT_ID}.run_summary.txt
+#Gather matrix of variants in cohort and per sample, then plot
+fgrep -A1 "Deletion Variants [HQ]" ${OUTDIR}/${COHORT_ID}.run_summary.txt | tail -n1 | awk -v OFS="\t" '{ print $4, $5 }' | tr -d "(" | awk -v OFS="\t" '{ print $1-$2, $2 }' > ${WRKDIR}/varCounts_cohort_toPlot.txt
+fgrep -A1 "Tandem Duplication Variants [HQ]" ${OUTDIR}/${COHORT_ID}.run_summary.txt | tail -n1 | awk -v OFS="\t" '{ print $4, $5 }' | tr -d "(" | awk -v OFS="\t" '{ print $1-$2, $2 }' >> ${WRKDIR}/varCounts_cohort_toPlot.txt
+fgrep -A1 "Insertion Variants" ${OUTDIR}/${COHORT_ID}.run_summary.txt | tail -n1 | awk -v OFS="\t" '{ print $4, $5 }' | tr -d "(" | awk -v OFS="\t" '{ print $1-$2, $2 }' >> ${WRKDIR}/varCounts_cohort_toPlot.txt
+fgrep -A1 "Simple Inversion Variants" ${OUTDIR}/${COHORT_ID}.run_summary.txt | tail -n1 | awk -v OFS="\t" '{ print $4, $5 }' | tr -d "(" | awk -v OFS="\t" '{ print $1-$2, $2 }' >> ${WRKDIR}/varCounts_cohort_toPlot.txt
+fgrep -A1 "Translocation Variants" ${OUTDIR}/${COHORT_ID}.run_summary.txt | tail -n1 | awk -v OFS="\t" '{ print $4, $5 }' | tr -d "(" | awk -v OFS="\t" '{ print $1-$2, $2 }' >> ${WRKDIR}/varCounts_cohort_toPlot.txt
+fgrep -A1 "Complex Variants" ${OUTDIR}/${COHORT_ID}.run_summary.txt | tail -n1 | awk -v OFS="\t" '{ print $4, $5 }' | tr -d "(" | awk -v OFS="\t" '{ print $1-$2, $2 }' >> ${WRKDIR}/varCounts_cohort_toPlot.txt
+fgrep -A1 "Incompletely Resolved Sites" ${OUTDIR}/${COHORT_ID}.run_summary.txt | tail -n1 | awk -v OFS="\t" '{ print $4, $5 }' | tr -d "(" | awk -v OFS="\t" '{ print $1-$2, $2 }' >> ${WRKDIR}/varCounts_cohort_toPlot.txt
+fgrep -A3 "Deletion Variants [HQ]" ${OUTDIR}/${COHORT_ID}.run_summary.txt | tail -n2 | awk -v OFS="\t" '{ print $NF }' | paste -s | awk -v OFS="\t" '{ print $2, $1-$2 }' > ${WRKDIR}/varCounts_sample_toPlot.txt
+fgrep -A3 "Tandem Duplication Variants [HQ]" ${OUTDIR}/${COHORT_ID}.run_summary.txt | tail -n2 | awk -v OFS="\t" '{ print $NF }' | paste -s | awk -v OFS="\t" '{ print $2, $1-$2 }' >> ${WRKDIR}/varCounts_sample_toPlot.txt
+fgrep -A3 "Insertion Variants" ${OUTDIR}/${COHORT_ID}.run_summary.txt | tail -n2 | awk -v OFS="\t" '{ print $NF }' | paste -s | awk -v OFS="\t" '{ print $2, $1-$2 }' >> ${WRKDIR}/varCounts_sample_toPlot.txt
+fgrep -A3 "Simple Inversion Variants" ${OUTDIR}/${COHORT_ID}.run_summary.txt | tail -n2 | awk -v OFS="\t" '{ print $NF }' | paste -s | awk -v OFS="\t" '{ print $2, $1-$2 }' >> ${WRKDIR}/varCounts_sample_toPlot.txt
+fgrep -A3 "Translocation Variants" ${OUTDIR}/${COHORT_ID}.run_summary.txt | tail -n2 | awk -v OFS="\t" '{ print $NF }' | paste -s | awk -v OFS="\t" '{ print $2, $1-$2 }' >> ${WRKDIR}/varCounts_sample_toPlot.txt
+fgrep -A3 "Complex Variants" ${OUTDIR}/${COHORT_ID}.run_summary.txt | tail -n2 | awk -v OFS="\t" '{ print $NF }' | paste -s | awk -v OFS="\t" '{ print $2, $1-$2 }' >> ${WRKDIR}/varCounts_sample_toPlot.txt
+fgrep -A3 "Incompletely Resolved Sites" ${OUTDIR}/${COHORT_ID}.run_summary.txt | tail -n2 | awk -v OFS="\t" '{ print $NF }' | paste -s | awk -v OFS="\t" '{ print $2, $1-$2 }' >> ${WRKDIR}/varCounts_sample_toPlot.txt
+Rscript ${liWGS_SV}/scripts/plotSVCounts.R ${WRKDIR}/varCounts_cohort_toPlot.txt ${WRKDIR}/varCounts_sample_toPlot.txt ${OUTDIR}/plots/${COHORT_ID}.SVcounts.pdf
+#Gather sizes & plot
 Rscript ${liWGS_SV}/scripts/scrapeSVsizes.R ${WRKDIR}/sizes/ ${OUTDIR}/${COHORT_ID}.run_summary.txt ${OUTDIR}/plots/${COHORT_ID}.SVsizes.pdf
+#Gather frequencies & plot
+mkdir ${WRKDIR}/frequencies
+sed '1d' ${OUTDIR}/SV_calls/${COHORT_ID}.deletion.bed | awk -v nsamps=${nsamps_cohort} '{ print $7/nsamps }' > ${WRKDIR}/frequencies/deletion.list
+sed '1d' ${OUTDIR}/SV_calls/${COHORT_ID}.duplication.bed | awk -v nsamps=${nsamps_cohort} '{ print $7/nsamps }' > ${WRKDIR}/frequencies/duplication.list
+sed '1d' ${OUTDIR}/SV_calls/${COHORT_ID}.complex.bed | awk -v nsamps=${nsamps_cohort} '{ print $6/nsamps }' > ${WRKDIR}/frequencies/complex.list
+sed '1d' ${OUTDIR}/SV_calls/${COHORT_ID}.unresolved.bed | awk -v nsamps=${nsamps_cohort} '{ print $6/nsamps }' > ${WRKDIR}/frequencies/unresolved.list
+sed '1d' ${OUTDIR}/SV_calls/${COHORT_ID}.insertion.bedpe | awk -v nsamps=${nsamps_cohort} '{ print $10/nsamps }' > ${WRKDIR}/frequencies/insertion.list
+sed '1d' ${OUTDIR}/SV_calls/${COHORT_ID}.inversion.bedpe | awk -v nsamps=${nsamps_cohort} '{ print $10/nsamps }' > ${WRKDIR}/frequencies/inversion.list
+Rscript ${liWGS_SV}/scripts/scrapeSVsizes.R ${WRKDIR}/frequencies/ ${OUTDIR}/plots/${COHORT_ID}.SVfrequencies.pdf
+#continue with report
 awk -v max=${maxCount} '{ if ($7<=max) print $4 }' ${OUTDIR}/SV_calls/${COHORT_ID}.deletion.bed > ${WRKDIR}/nonArtifact.variantIDs.list
 awk -v max=${maxCount} '{ if ($7<=max) print $4 }' ${OUTDIR}/SV_calls/${COHORT_ID}.duplication.bed >> ${WRKDIR}/nonArtifact.variantIDs.list
 awk -v max=${maxCount} '{ if ($6<=max) print $4 }' ${OUTDIR}/SV_calls/${COHORT_ID}.complex.bed >> ${WRKDIR}/nonArtifact.variantIDs.list

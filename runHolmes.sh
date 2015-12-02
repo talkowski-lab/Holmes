@@ -175,7 +175,6 @@ if [ ${part} == "B" ] || [ ${part} == "F" ]; then
   echo -e "STATUS [$(date)]: Calculating run summary metrics..."
   bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/finalSummary.log -e ${OUTDIR}/logs/finalSummary.log -u nobody -J ${COHORT_ID}_SUMMARIZE "${liWGS_SV}/scripts/Holmes_summary.sh ${samples_list} ${params}"
 
-
   #Remove working directory unless specified otherwise
   if ! [ ${KEEP_TMP}=="TRUE" ]; then
     rm -rf ${WRKDIR}
