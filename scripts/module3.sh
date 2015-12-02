@@ -43,10 +43,10 @@ if ! [ ${pre_bamstat}=="TRUE" ] || ! [ -e ${bamstat_paths} ]; then
 
   #Rename new bamstat files to be consistent with old naming convention
   while read ID bam sex; do
-    mv ${WRKDIR}/${ID}/bamstat/*del*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_deletion_dX_q-1_sX.txt
-    mv ${WRKDIR}/${ID}/bamstat/*dup*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_insertion_dX_q-1_sX.txt
-    mv ${WRKDIR}/${ID}/bamstat/*ins*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_inversion_dX_q-1_sX.txt
-    mv ${WRKDIR}/${ID}/bamstat/*inv*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_transloc_dX_q-1_sX.txt
+    mv ${WRKDIR}/${ID}/bamstat/*del*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_deletion_dX_q-1_sX.txt
+    mv ${WRKDIR}/${ID}/bamstat/*dup*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_insertion_dX_q-1_sX.txt
+    mv ${WRKDIR}/${ID}/bamstat/*ins*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_inversion_dX_q-1_sX.txt
+    mv ${WRKDIR}/${ID}/bamstat/*inv*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_transloc_dX_q-1_sX.txt
   done < ${samples_list}
 else
 
@@ -54,17 +54,17 @@ else
   while read ID bam sex; do
     mkdir ${WRKDIR}/${ID}/bamstat/
     bpath=$( fgrep -w ${ID} ${bamstat_paths} | cut -f2 )
-    cp ${bpath}/*del*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_deletion_dX_q-1_sX.txt
-    if [ $( l ${bpath}/*dup*clusters* | wc -l ) -gt 0 ]; then
-      cp ${bpath}/*dup*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_insertion_dX_q-1_sX.txt
+    cp ${bpath}/*del*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_deletion_dX_q-1_sX.txt
+    if [ $( l ${bpath} | fgrep dup | fgrep clusters | wc -l ) -gt 0 ]; then
+      cp ${bpath}/*dup*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_insertion_dX_q-1_sX.txt
     else
-      cp ${bpath}/*ins*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_insertion_dX_q-1_sX.txt
+      cp ${bpath}/*ins*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_insertion_dX_q-1_sX.txt
     fi
-    cp ${bpath}/*inv*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_inversion_dX_q-1_sX.txt
-    if [ $( l ${bpath}/*tloc*clusters* | wc -l ) -gt 0 ]; then
-      cp ${bpath}/*tloc*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_transloc_dX_q-1_sX.txt
+    cp ${bpath}/*inv*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_inversion_dX_q-1_sX.txt
+    if [ $( l ${bpath} | fgrep tloc | fgrep clusters | wc -l ) -gt 0 ]; then
+      cp ${bpath}/*tloc*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_transloc_dX_q-1_sX.txt
     else
-      cp ${bpath}/*transloc*clusters* ${WRKDIR}/${ID}/bamstat/${ID}_transloc_dX_q-1_sX.txt
+      cp ${bpath}/*transloc*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_transloc_dX_q-1_sX.txt
     fi
   done < ${samples_list}
 fi
