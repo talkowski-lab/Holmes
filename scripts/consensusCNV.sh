@@ -175,6 +175,12 @@ for contig in $( seq 1 22 ); do
 done
 #Genotype chrX by sex in both M and F
 for contig in X; do
+  if [ -e ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig} ]; then
+    rm -r ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}
+  fi
+  if [ -e ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots/${contig} ]; then
+    rm -r ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots/${contig}
+  fi
   mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}
   mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots/${contig}
   for sex in M F; do
@@ -214,6 +220,12 @@ for contig in X; do
 done
 #Genotype Y only in males
 for contig in Y; do
+  if [ -e ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig} ]; then
+    rm -r ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}
+  fi
+  if [ -e ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots/${contig} ]; then
+    rm -r ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots/${contig}
+  fi
   mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}
   mkdir ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/plots/${contig}
   for sex in M; do
@@ -254,7 +266,6 @@ for contig in Y; do
     done < ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/${COHORT_ID}.${cnvtype}_toGenotype.${grouping}.${contig}.bed | paste - - >> ${WRKDIR}/consensusCNV/${cnvtype}_genotyping/chrsplit/${contig}/F/${COHORT_ID}.${cnvtype}_Genotypes.${grouping}.${contig}.bed
   done
 done
-
 
 #Gate until complete; 20 sec check; 5 min report
 GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_${cnvtype}_genotypeCNV" | wc -l )

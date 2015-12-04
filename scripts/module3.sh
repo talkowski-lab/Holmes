@@ -52,6 +52,9 @@ else
 
   #copy clusters and stats file from previous bamstat run
   while read ID bam sex; do
+    if [ -e ${WRKDIR}/${ID}/bamstat ]; then
+      rm -rf ${WRKDIR}/${ID}/bamstat
+    fi
     mkdir ${WRKDIR}/${ID}/bamstat/
     bpath=$( fgrep -w ${ID} ${bamstat_paths} | cut -f2 )
     cp ${bpath}/*del*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_deletion_clusters_dX_q-1_sX.txt
