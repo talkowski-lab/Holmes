@@ -11,11 +11,6 @@ params=$2
 #Source params file
 . ${params}
 
-#Load correct version of gcc for anaconda dependencies
-module rm gcc/4.9.0
-module rm gcc-4.4
-module load gcc/4.9.0
-
 #Prepare classifier files
 mkdir ${WRKDIR}/classifier
 while read ID bam sex; do
