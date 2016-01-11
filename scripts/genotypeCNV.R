@@ -15,8 +15,9 @@
 # [3] Output file name
 # [4] Optional: Verbose TRUE. Default:FALSE
 # [5] Optional: outType K. Default:Z
-# [6] Optional: delPrior FALSE for Dups Default:TRUE
-# [7] Optional: groupC Default:FALSE
+# [6] Optional: prior Default:FALSE
+# [7] Optional: delPrior FALSE for Dups Default:TRUE
+# [8] Optional: groupC Default:FALSE
 
 #Read command-line arguments
 args <- commandArgs(TRUE)
@@ -84,6 +85,9 @@ rebin <- function(df,compression){
                    },compression)
   return(as.data.frame(cbind(Chr,Start,End,newvals)))
 }
+
+timeLimit=60              #Time limit for loci since some run long
+
 #Main genotyping function
 genotypeCov <- function(chr,start,end,            #region to be genotyped
                         cov=rawcov,               #path to coverage matrix
@@ -464,8 +468,12 @@ else
         }
   #cat(i,":",median(colSds)," ",sd(colSds),"\n")
   clusterSds[i]<-median(colSds)
+  if(i==2) 
+  {
+	CnTwoMedianSd=median(colSds)
   }
-  cat(chr,start,end,ID," median prior cluster sds and sd:",median(na.omit(clusterSds)),sd(na.omit(clusterSds)),"\n")
+  }
+  cat(chr,start,end,ID," median prior cluster sds and sd:",CnTwoMedianSd,sd(na.omit(clusterSds)),"\n")
   if(median(na.omit(clusterSds))>0.1)
   {
 	z.pvaluecutoff<-1e-4
@@ -560,8 +568,8 @@ else
      power[i-1]<-t.power1(sds=c(sd(Control),sd(Treat)),nsamp=c(length(Control),length(Treat)),var.equal=FALSE)
      #cat(power[i-1])
      #cat("\n")
-     if(delPrior=="TRUE"){PermTTests[i-1]<-capture.output(cat(as.numeric(permTS(Control,Treat,alternative="greater")$p.value)))}
-     else{PermTTests[i-1]<-capture.output(cat(as.numeric(permTS(Control,Treat,alternative="less")$p.value)))}
+     if(delPrior=="TRUE"){myPermObject<-permTS(Control,Treat,alternative="greater",method='pclt');PermTTests[i-1]<-capture.output(cat(as.numeric(myPermObject$p.value)))}
+     else{myPermObject<-permTS(Control,Treat,alternative="less",method='pclt');PermTTests[i-1]<-capture.output(cat(as.numeric(myPermObject$p.value)))}
     #cat("c=",c,"\n")
      #PermTTests[i-1]<-as.numeric(capture.output(cat(as.character(colsplit(c,split=" ",names="d")[2]))))
      #cat(PermTTests[i-1])
@@ -604,6 +612,7 @@ else
           if(oneSample==TRUE || median(power)<0.8 || groupC==TRUE)
           {
 		j=1;
+		#cat("IN THE PRINT IDS BLOCK! ")
                 for(i in c(5:ncol(genotype)))
                 {
 		#cat(samplenames[i-4])
@@ -742,10 +751,18 @@ else
 }
 
 #Genotypes intervals
-results_matrix <- as.data.frame(t(apply(intervals,1,function(row){return(suppressWarnings(genotypeCov(chr=row[1],
+#cat(dim(rawcov)[2]-3)
+timeOut <- function (expr, cpu = Inf, elapsed = Inf)
+{
+setTimeLimit(cpu = cpu, elapsed = elapsed, transient = TRUE)
+on.exit(setTimeLimit()) # should not be needed, but averts future error message
+expr
+}
+results_matrix <- as.data.frame(t(apply(intervals,1,function(row){ tryCatch(timeOut({return(suppressWarnings(genotypeCov(chr=row[1],
                                                                                                       start=as.numeric(as.character(row[2])),
                                                                                                       end=as.numeric(as.character(row[3])),
-                                                                                                      ID=row[4], verbose=args[4], outType=args[5], IDs=row[5], prior=args[6], delPrior=args[7], groupC=args[8])))})))
+                                                                                                      ID=row[4], verbose=args[4], outType=args[5], IDs=row[5], prior=args[6], delPrior=args[7], groupC=args[8])))}, elapsed=timeLimit), error = function(e) {cat("Error: Took Too Long!\n");c(row[4],row[1],as.numeric(as.character(row[2])),end=as.numeric(as.character(row[3])),rep(-9,(dim(rawcov)[2]-3)))})
+})))
 
 colnames(results_matrix) <- c("CNV_ID","chr","start","end",colnames(rawcov[,-c(1:3)]))
 results_matrix[,-c(1:4)] <- t(apply(results_matrix[,-c(1:4)],1,function(vals){vals <- as.numeric(as.character(vals)); return(vals)})) # return(vals-median(vals)+2)}))
