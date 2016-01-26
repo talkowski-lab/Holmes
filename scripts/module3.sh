@@ -45,8 +45,8 @@ if ! [ ${pre_bamstat}=="TRUE" ] || ! [ -e ${bamstat_paths} ]; then
   while read ID bam sex; do
     mv ${WRKDIR}/${ID}/bamstat/*del*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_deletion_clusters_dX_q-1_sX.txt
     mv ${WRKDIR}/${ID}/bamstat/*dup*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_insertion_clusters_dX_q-1_sX.txt
-    mv ${WRKDIR}/${ID}/bamstat/*ins*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_inversion_clusters_dX_q-1_sX.txt
-    mv ${WRKDIR}/${ID}/bamstat/*inv*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_transloc_clusters_dX_q-1_sX.txt
+    mv ${WRKDIR}/${ID}/bamstat/*inv*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_inversion_clusters_dX_q-1_sX.txt
+    mv ${WRKDIR}/${ID}/bamstat/*tloc*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_transloc_clusters_dX_q-1_sX.txt
   done < ${samples_list}
 else
 
