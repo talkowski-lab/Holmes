@@ -105,7 +105,7 @@ if [ ${part} == "A" ] || [ ${part} == "F" ]; then
   ##STAGE 2b: module 5
   echo -e "STATUS [$(date)]: PHASE 1b complete; Beginning PHASE 2b..."
   #Submit module 5 (joint clustering)
-  bsub -q normal -sla miket_sc -J ${COHORT_ID}_MODULE_5 "${liWGS_SV}/scripts/module5.sh ${samples_list} ${params}"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module5.log -e ${OUTDIR}/logs/module5.log -J ${COHORT_ID}_MODULE_5 "${liWGS_SV}/scripts/module5.sh ${samples_list} ${params}"
 
   #Gate until modules 4 & 5 complete; 20 sec check; 5 min report
   GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_4\|${COHORT_ID}_MODULE_5" | wc -l )
