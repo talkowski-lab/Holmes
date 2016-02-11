@@ -41,7 +41,6 @@ for class in deletion insertion inversion transloc; do
 done
 bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/retrotransposon_check.log -e ${OUTDIR}/logs/retrotransposon_check.log -u nobody -J ${COHORT_ID}_annotation "/data/talkowski/rlc47/code/dna-scripts/get_retrotransposons.sh ${WRKDIR}/events.list ${WRKDIR}/clusters.list ${WRKDIR}/classifier/clusterfix/newCoords/"
 
-
 #Gate until all annotations complete; 20 sec check; 5 min report
 GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_annotation" | wc -l )
 GATEwait=0
