@@ -58,13 +58,13 @@ else
     mkdir ${WRKDIR}/${ID}/bamstat/
     bpath=$( fgrep -w ${ID} ${bamstat_paths} | cut -f2 )
     cp ${bpath}/*del*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_deletion_clusters_dX_q-1_sX.txt
-    if [ $( l ${bpath} | fgrep dup | fgrep clusters | wc -l ) -gt 0 ]; then
+    if [ $( ls -ltrha ${bpath} | fgrep dup | fgrep clusters | wc -l ) -gt 0 ]; then
       cp ${bpath}/*dup*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_insertion_clusters_dX_q-1_sX.txt
     else
       cp ${bpath}/*ins*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_insertion_clusters_dX_q-1_sX.txt
     fi
     cp ${bpath}/*inv*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_inversion_clusters_dX_q-1_sX.txt
-    if [ $( l ${bpath} | fgrep tloc | fgrep clusters | wc -l ) -gt 0 ]; then
+    if [ $( ls -ltrha ${bpath} | fgrep tloc | fgrep clusters | wc -l ) -gt 0 ]; then
       cp ${bpath}/*tloc*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_transloc_clusters_dX_q-1_sX.txt
     else
       cp ${bpath}/*transloc*clusters*txt ${WRKDIR}/${ID}/bamstat/${ID}_transloc_clusters_dX_q-1_sX.txt
