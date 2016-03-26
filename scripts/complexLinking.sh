@@ -18,11 +18,8 @@ module load bedtools/2.22.1
 #Set other parameters
 min_sample_concordance=0.2 #minimum overlap between clusters to consider potential complex site
 
-#Determine clustering distance
-while read ID bam sex; do
-  basename ${WRKDIR}/${ID}/bamstat/deletion_clusters*txt | cut -f3 -d_ | tr -d "d"
-done < ${samples_list} | sort -nk1,1 > ${WRKDIR}/clustering_distances.list
-clustdist=$( tail -n1 ${WRKDIR}/clustering_distances.list )
+#Determine clustering distance (max of all samples)
+clustdist=$( cut -f3 ${WRKDIR}/classifier/${COHORT_ID}_boot.list | sort -nrk1,1 | head -n1 )
 
 #Create output directory
 mkdir ${WRKDIR}/classifier/clusterfix/newCoords/Complex
