@@ -48,11 +48,8 @@ until [[ $GATEcount == 0 ]]; do
   fi
 done
 
-#Determine clustering distance
-while read ID bam sex; do
-  basename ${WRKDIR}/${ID}/bamstat/deletion_clusters*txt | cut -f3 -d_ | tr -d "d"
-done < ${samples_list} | sort -nk1,1 > ${WRKDIR}/clustering_distances.list
-clustdist=$( tail -n1 ${WRKDIR}/clustering_distances.list )
+#Determine clustering distance (max of all samples)
+clustdist=$( cut -f3 ${WRKDIR}/classifier/${COHORT_ID}_boot.list | sort -nrk1,1 | head -n1 )
 
 #Parse complex linked output
 if [ -e ${WRKDIR}/events.list ]; then
