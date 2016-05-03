@@ -1,4 +1,4 @@
-#!/usr/bin/Rscript
+#! /usr/bin/env Rscript
 
 #Rscript to run cn.MOPS after genome-wide insert coverage has been created
 
