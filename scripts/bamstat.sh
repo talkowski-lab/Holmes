@@ -3,8 +3,6 @@
 # BAMFILE=$1
 # STATSDIR=$2
 
-set -e
-
 usage(){
 cat <<EOF
 Usage: bamstat.sh [-s SIZE] [-n] -i bamfile -o output_dir
