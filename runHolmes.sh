@@ -57,8 +57,21 @@ if [ ${part} == "A" ] || [ ${part} == "F" ]; then
   echo -e "STATUS [$(date)]: Indexing BAMs..."
   while read ID bam sex; do
     ln -s ${bam} ${WRKDIR}/${ID}/${ID}.bam
-    bsub -q short -e ${OUTDIR}/logs/bam_index.log -o ${OUTDIR}/logs/bam_index.log -u nobody -sla miket_sc -J ${ID}_index "sambamba index ${WRKDIR}/${ID}/${ID}.bam"
+    bsub -q short -e ${OUTDIR}/logs/bam_index.log -o ${OUTDIR}/logs/bam_index.log -u nobody -sla miket_sc -J ${COHORT_ID}_index "sambamba index ${WRKDIR}/${ID}/${ID}.bam"
   done < ${samples_list}
+
+  #Gate until indexing is complete; 20 sec check; 5 min report
+  GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_1\|${COHORT_ID}_index" | wc -l )
+  GATEwait=0
+  until [[ $GATEcount == 0 ]]; do
+    sleep 20s
+    GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_1\|${COHORT_ID}_index" | wc -l )
+    GATEwait=$[${GATEwait} +1]
+    if [[ $GATEwait == 15 ]]; then
+      echo -e "STATUS [$(date)]: Gated at bam indexing..."
+      GATEwait=0
+    fi
+  done
 
   ##STAGE 1: modules 1, 2, and 3
   echo -e "STATUS [$(date)]: Beginning PHASE 1..."
