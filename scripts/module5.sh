@@ -70,7 +70,7 @@ done
 
 #Complete classifier on fixed clusters
 for class in deletion insertion inversion transloc; do
-  bsub -u nobody -o ${OUTDIR}/logs/classifier_r2.log -e ${OUTDIR}/logs/classifier_r2.log -q normal -sla miket_sc -J ${COHORT_ID}_classifier_r2 "${CLASSIFIER_DIR}/rpc_classify.py ${WRKDIR}/classifier/clusterfix/${COHORT_ID}_${class}.patched.clusters ${WRKDIR}/classifier/clusterfix/${COHORT_ID}_${class}.patched.events.bedpe ${WRKDIR}/classifier/${COHORT_ID}_boot.list ${COHORT_ID}_${class} --cluster-bedpe ${WRKDIR}/classifier/clusterfix/${COHORT_ID}_${class}.patched.bkpts.bedpe"
+  bsub -u nobody -o ${OUTDIR}/logs/classifier_r2.log -e ${OUTDIR}/logs/classifier_r2.log -q normal -sla miket_sc -J ${COHORT_ID}_classifier_r2 "source deactivate; ${CLASSIFIER_DIR}/rpc_classify.py ${WRKDIR}/classifier/clusterfix/${COHORT_ID}_${class}.patched.clusters ${WRKDIR}/classifier/clusterfix/${COHORT_ID}_${class}.patched.events.bedpe ${WRKDIR}/classifier/${COHORT_ID}_boot.list ${COHORT_ID}_${class} --cluster-bedpe ${WRKDIR}/classifier/clusterfix/${COHORT_ID}_${class}.patched.bkpts.bedpe"
 done
 
 #Gate until complete; 20 sec check; 5 min report

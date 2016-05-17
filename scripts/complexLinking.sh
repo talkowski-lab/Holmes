@@ -65,7 +65,9 @@ done < ${WRKDIR}/classifier/clusterfix/newCoords/Complex/complex.ids.txt
 #Step 2
 awk '{ if ($2!="") print $0 }' ${WRKDIR}/classifier/clusterfix/newCoords/Complex/complex.int.list.txt | awk -v cohort=${COHORT_ID} '{ print cohort"_complex_"NR "\t" $0 }' > ${WRKDIR}/classifier/clusterfix/newCoords/Complex/complex.int1.list.txt
 cat ${WRKDIR}/classifier/clusterfix/newCoords/Complex/complex.int1.list.txt > ${WRKDIR}/classifier/clusterfix/newCoords/Complex/int.txt
-rm ${WRKDIR}/classifier/clusterfix/newCoords/Complex/complex.int2.list.txt
+if [ -e ${WRKDIR}/classifier/clusterfix/newCoords/Complex/complex.int2.list.txt ]; then
+  rm ${WRKDIR}/classifier/clusterfix/newCoords/Complex/complex.int2.list.txt
+fi
 countint=1
 while [ ${countint} -gt 0 ]; do
   awk 'NR==1 { print $1 }' ${WRKDIR}/classifier/clusterfix/newCoords/Complex/int.txt > ${WRKDIR}/classifier/clusterfix/newCoords/Complex/clusterlist1.txt
