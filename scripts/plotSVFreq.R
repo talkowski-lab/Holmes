@@ -45,7 +45,7 @@ rect(xleft=100,xright=par("usr")[2],
      col="gray60",density=15)
 abline(h=seq(0,1,by=0.25),lty=2,col="gray40")
 text(x=150,y=0,pos=3,
-     labels="VAF > 50%\nCandidate Artifacts")
+     labels="VAF > 50%")
 for(i in 6:1){
   points(cdfx[,i],type="l",lwd=3,col=colors[i])
 }

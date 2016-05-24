@@ -41,12 +41,12 @@ done < ${samples_list} | paste - - - - - - - - - - - - - - - - - - - >> ${OUTDIR
 #Get SV Sizes
 mkdir ${WRKDIR}/sizes
 for type in deletion duplication; do
-  awk '{ print $3-$2 }' ${OUTDIR}/SV_calls/${COHORT_ID}.${type}.bed | sort -nk1,1 > ${WRKDIR}/sizes/${type}.size
+  fgrep -v "#" ${OUTDIR}/SV_calls/${COHORT_ID}.${type}.bed | awk '{ print $3-$2 }' | sort -nk1,1 > ${WRKDIR}/sizes/${type}.size
 done
-awk '{ print $3-$2 }' ${OUTDIR}/SV_calls/${COHORT_ID}.insertion.bedpe | sort -nk1,1 > ${WRKDIR}/sizes/insertion_source.size
-awk '{ print $6-$5 }' ${OUTDIR}/SV_calls/${COHORT_ID}.insertion.bedpe | sort -nk1,1 > ${WRKDIR}/sizes/insertion_sink.size
-awk '{ printf "%.0f\n", (($6+$3)/2)-(($2+$5)/2) }'  ${OUTDIR}/SV_calls/${COHORT_ID}.inversion.bedpe | sort -nk1,1 > ${WRKDIR}/sizes/inversion.size #take average of plus and minus bps for inversions
-awk '{ print $3-$2 }' ${OUTDIR}/SV_calls/${COHORT_ID}.complex.bed | sort -nk1,1 > ${WRKDIR}/sizes/complex.size
+fgrep -v "#" ${OUTDIR}/SV_calls/${COHORT_ID}.insertion.bedpe | awk '{ print $3-$2 }' | sort -nk1,1 > ${WRKDIR}/sizes/insertion_source.size
+fgrep -v "#" ${OUTDIR}/SV_calls/${COHORT_ID}.insertion.bedpe | awk '{ print $6-$5 }' | sort -nk1,1 > ${WRKDIR}/sizes/insertion_sink.size
+fgrep -v "#" ${OUTDIR}/SV_calls/${COHORT_ID}.inversion.bedpe | awk '{ printf "%.0f\n", (($6+$3)/2)-(($2+$5)/2) }' | sort -nk1,1 > ${WRKDIR}/sizes/inversion.size #take average of plus and minus bps for inversions
+fgrep -v "#" ${OUTDIR}/SV_calls/${COHORT_ID}.complex.bed | awk '{ print $3-$2 }' | sort -nk1,1 > ${WRKDIR}/sizes/complex.size
 
 #Write final report to base level $OUTDIR
 echo -e "##################################\n\

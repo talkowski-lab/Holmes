@@ -90,8 +90,9 @@ barplot(x,space=c(1,0.2),
         density=rep(c(NA,20),28),yaxt="n",add=T)
 #Y-axes
 axis(2,at=seq(0,max_cohort,by=ceiling(max_cohort/600)*100),las=2,cex.axis=0.7)
+rightTicks <- seq(0,max_sample*scaler,by=round(scaler*ceiling(max_sample/60)*10,0))
 axis(4,at=seq(0,max_sample*scaler,by=round(scaler*ceiling(max_sample/60)*10,0)),
-     labels=seq(0,max_sample,by=round(ceiling(max_sample/60)*10,0)),
+     labels=seq(0,max_sample,by=round(ceiling(max_sample/60)*10,0))[1:length(rightTicks)],
      las=2,cex.axis=0.7)
 #Axis labels
 mtext(text=c("Deletion","Tandem\nDuplication","Insertion","Simple\nInversion",
