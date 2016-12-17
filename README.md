@@ -1,3 +1,4 @@
+[![DOI](https://zenodo.org/badge/40485508.svg)](https://zenodo.org/badge/latestdoi/40485508)
 # Holmes
 Pipeline for structural variation detection from liWGS libraries  
 
