@@ -1,8 +1,15 @@
 #!/bin/bash
 
-#liWGS-SV Pipeline: Sex Check Script
-#August 2015
-#Contact: rcollins@chgr.mgh.harvard.edu
+#################################
+#             HOLMES            #
+#  The liWGS SV discovery tool  #
+#################################
+
+# Copyright (c) 2016 Ryan L. Collins and the laboratory of Michael E. Talkowski
+# Contact: Ryan L. Collins <rlcollins@g.harvard.edu>
+# Code development credits and citation availble on GitHub
+
+#Sex Check Script
 
 #Read input
 ID=$1

@@ -1,4 +1,13 @@
-#!/usr/bin/Rscript
+#!/bin/bash
+
+#################################
+#             HOLMES            #
+#  The liWGS SV discovery tool  #
+#################################
+
+# Copyright (c) 2016 Ryan L. Collins and the laboratory of Michael E. Talkowski
+# Contact: Ryan L. Collins <rlcollins@g.harvard.edu>
+# Code development credits and citation availble on GitHub
 
 #Positional argument (1): full path to varCounts_cohort_toPlot.txt (usually in ${WRKDIR})
 #Positional argument (2): full path to varCounts_sample_toPlot.txt (usually in ${WRKDIR})

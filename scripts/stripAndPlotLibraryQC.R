@@ -1,5 +1,14 @@
 #!/usr/bin/Rscript
 
+#################################
+#             HOLMES            #
+#  The liWGS SV discovery tool  #
+#################################
+
+# Copyright (c) 2016 Ryan L. Collins and the laboratory of Michael E. Talkowski
+# Contact: Ryan L. Collins <rlcollins@g.harvard.edu>
+# Code development credits and citation availble on GitHub
+
 #Positional argument (1): full path to Holmes QC.metrics file (input)
 #Positional argument (2): full path to Holmes run summary file (text output)
 #Positional argument (3): full path to metrics plot pdf (graphical output)

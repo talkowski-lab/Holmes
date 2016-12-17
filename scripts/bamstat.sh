@@ -1,5 +1,14 @@
 #!/bin/bash
 
+#################################
+#             HOLMES            #
+#  The liWGS SV discovery tool  #
+#################################
+
+# Copyright (c) 2016 Ryan L. Collins and the laboratory of Michael E. Talkowski
+# Contact: Ryan L. Collins <rlcollins@g.harvard.edu>
+# Code development credits and citation availble on GitHub
+
 # BAMFILE=$1
 # STATSDIR=$2
 
@@ -61,12 +70,15 @@ if $SORT; then
 	# TODO: Bamstat currently closes input file after sampling, 
 	# preventing use of pipes. Fix this.
 	# sambamba sort -n -o /dev/stdout $BAMFILE | bamstat -i - -d 7 -b 
-	/data/talkowski/tools/bin/sambamba_v0.4.6 view -f bam -F 'not (secondary_alignment or duplicate)' -o ${BAMFILE}.nosecondary.tmp_bamstat.bam ${BAMFILE}
-	/data/talkowski/tools/bin/sambamba_v0.4.6 sort -n -m 4GB -p -o ${BAMFILE}.tmp_nsort.bam ${BAMFILE}.nosecondary.tmp_bamstat.bam
+	/data/talkowski/tools/bin/sambamba_v0.4.6 view -f bam -F \
+	'not (secondary_alignment or duplicate)' -o ${BAMFILE}.nosecondary.tmp_bamstat.bam ${BAMFILE}
+	/data/talkowski/tools/bin/sambamba_v0.4.6 sort -n -m 4GB -p \
+	-o ${BAMFILE}.tmp_nsort.bam ${BAMFILE}.nosecondary.tmp_bamstat.bam
 	bamstat -i ${BAMFILE}.tmp_nsort.bam -d 7 -b
 	rm ${BAMFILE}.tmp_nsort.bam ${BAMFILE}.nosecondary.tmp_bamstat.bam
 else
-	sambamba view -f bam -F 'not (secondary_alignment or duplicate)' -o ${BAMFILE}.nosecondary.tmp_bamstat.bam ${BAMFILE}
+	sambamba view -f bam -F 'not (secondary_alignment or duplicate)' \
+	-o ${BAMFILE}.nosecondary.tmp_bamstat.bam ${BAMFILE}
 	bamstat -i ${BAMFILE}.nosecondary.tmp_bamstat.bam -d 7 -b
 	rm ${BAMFILE}.nosecondary.tmp_bamstat.bam
 fi
@@ -105,6 +117,7 @@ for svtype in "deletion" "insertion" "inversion" "transloc"
 do
 	bsub -sla miket_sc -q normal -o rpc.out -J BAMSTAT_GATE "
 sort -k2,2 -k5,5 -k3n,3n ${svtype}_pairs.txt > ${svtype}_pairs.sorted.txt;
-readPairCluster -d $DISTANCE -s $SIZE -q $MAPQ -r ${svtype}_pairs.sorted.txt > ${svtype}_clusters_d${DISTANCE}_q${MAPQ}_s${SIZE}.txt"
+readPairCluster -d $DISTANCE -s $SIZE -q $MAPQ -r ${svtype}_pairs.sorted.txt > \
+${svtype}_clusters_d${DISTANCE}_q${MAPQ}_s${SIZE}.txt"
 done
 

@@ -1,4 +1,13 @@
-#!/usr/bin/Rscript
+#!/bin/bash
+
+#################################
+#             HOLMES            #
+#  The liWGS SV discovery tool  #
+#################################
+
+# Copyright (c) 2016 Ryan L. Collins and the laboratory of Michael E. Talkowski
+# Contact: Ryan L. Collins <rlcollins@g.harvard.edu>
+# Code development credits and citation availble on GitHub
 
 #Plot variant frequencies from Holmes
 

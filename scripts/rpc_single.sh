@@ -1,11 +1,15 @@
 #!/bin/bash
-#
-# rpc.sh
-# Copyright (C) 2015 Matthew Stone <mstone5@mgh.harvard.edu>
-#
-# Distributed under terms of the MIT license.
-#
 
+#################################
+#             HOLMES            #
+#  The liWGS SV discovery tool  #
+#################################
+
+# Copyright (c) 2016 Ryan L. Collins and the laboratory of Michael E. Talkowski
+# Contact: Ryan L. Collins <rlcollins@g.harvard.edu>
+# Code development credits and citation availble on GitHub
+
+#rpc_single.sh
 
 set -e
 

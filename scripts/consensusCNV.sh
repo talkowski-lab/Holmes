@@ -1,11 +1,15 @@
 #!/bin/bash
 
 #################################
-#     Consensus CNV Pipeline    #
-#          w/ Genotyping        #
-#              Mk IV            #
-#          Talkowski Lab        #
+#             HOLMES            #
+#  The liWGS SV discovery tool  #
 #################################
+
+# Copyright (c) 2016 Ryan L. Collins and the laboratory of Michael E. Talkowski
+# Contact: Ryan L. Collins <rlcollins@g.harvard.edu>
+# Code development credits and citation availble on GitHub
+
+#Consensus linking with genotyping
 
 #Consensus group descriptions:
 #  A1: valid cluster, 100% cnMOPS concordance, genotyping confirm

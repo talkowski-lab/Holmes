@@ -1,10 +1,15 @@
 #!/bin/bash
 
-#liWGS-SV Pipeline: MASTER PIPELINE SCRIPT
-#August 2015
-#Contact: rcollins@chgr.mgh.harvard.edu
+#################################
+#             HOLMES            #
+#  The liWGS SV discovery tool  #
+#################################
 
-#Submit this script to long queue on ERISOne to run entire pipeline
+# Copyright (c) 2016 Ryan L. Collins and the laboratory of Michael E. Talkowski
+# Contact: Ryan L. Collins <rlcollins@g.harvard.edu>
+# Code development credits and citation availble on GitHub
+
+#Submit this script to run entire pipeline
 
 #Read input
 samples_list=$1
@@ -57,7 +62,8 @@ if [ ${part} == "A" ] || [ ${part} == "F" ]; then
   echo -e "STATUS [$(date)]: Indexing BAMs..."
   while read ID bam sex; do
     ln -s ${bam} ${WRKDIR}/${ID}/${ID}.bam
-    bsub -q short -e ${OUTDIR}/logs/bam_index.log -o ${OUTDIR}/logs/bam_index.log -u nobody -sla miket_sc -J ${COHORT_ID}_index "sambamba index ${WRKDIR}/${ID}/${ID}.bam"
+    bsub -q short -e ${OUTDIR}/logs/bam_index.log -o ${OUTDIR}/logs/bam_index.log \
+    -u nobody -sla miket_sc -J ${COHORT_ID}_index "sambamba index ${WRKDIR}/${ID}/${ID}.bam"
   done < ${samples_list}
 
   #Gate until indexing is complete; 20 sec check; 5 min report
@@ -76,11 +82,14 @@ if [ ${part} == "A" ] || [ ${part} == "F" ]; then
   ##STAGE 1: modules 1, 2, and 3
   echo -e "STATUS [$(date)]: Beginning PHASE 1..."
   #Submit module 1 (QC)
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module1.log -e ${OUTDIR}/logs/module1.log -u nobody -J ${COHORT_ID}_MODULE_1 "${liWGS_SV}/scripts/module1.sh ${samples_list} ${params}"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module1.log -e ${OUTDIR}/logs/module1.log \
+  -u nobody -J ${COHORT_ID}_MODULE_1 "${liWGS_SV}/scripts/module1.sh ${samples_list} ${params}"
   #Submit module 2 (physical depth analysis)
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module2.log -e ${OUTDIR}/logs/module2.log -u nobody -J ${COHORT_ID}_MODULE_2 "${liWGS_SV}/scripts/module2.sh ${samples_list} ${params}"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module2.log -e ${OUTDIR}/logs/module2.log \
+  -u nobody -J ${COHORT_ID}_MODULE_2 "${liWGS_SV}/scripts/module2.sh ${samples_list} ${params}"
   #Submit module 3 (per-sample clustering)
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module3.log -e ${OUTDIR}/logs/module3.log -u nobody -J ${COHORT_ID}_MODULE_3 "${liWGS_SV}/scripts/module3.sh ${samples_list} ${params}"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module3.log -e ${OUTDIR}/logs/module3.log \
+  -u nobody -J ${COHORT_ID}_MODULE_3 "${liWGS_SV}/scripts/module3.sh ${samples_list} ${params}"
 
   #Gate until modules 1 & 2 complete; 20 sec check; 5 min report
   GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_1\|${COHORT_ID}_MODULE_2" | wc -l )
@@ -98,8 +107,6 @@ if [ ${part} == "A" ] || [ ${part} == "F" ]; then
   ##STAGE 2a: module 4
   echo -e "STATUS [$(date)]: PHASE 1a complete; Beginning PHASE 2a..."
   #Submit module 4 (physical depth CNV calling)
-  #If DNAcopy is included in module 4, this job to go to big for creation of DNAcopy reference profiles (requires > 60GB memory for ~300 samples)
-  #As of Nov 30, 2015, DNAcopy is not run by default because it's too slow, too memory-intensive, and not highly informative. This decision can be revisited later on.
   bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module4.log -e ${OUTDIR}/logs/module4.log -u nobody -J ${COHORT_ID}_MODULE_4 "${liWGS_SV}/scripts/module4.sh ${samples_list} ${params}"
 
   #Gate until module 3 complete; 20 sec check; 5 min report
@@ -118,7 +125,8 @@ if [ ${part} == "A" ] || [ ${part} == "F" ]; then
   ##STAGE 2b: module 5
   echo -e "STATUS [$(date)]: PHASE 1b complete; Beginning PHASE 2b..."
   #Submit module 5 (joint clustering)
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module5.log -e ${OUTDIR}/logs/module5.log -J ${COHORT_ID}_MODULE_5 "${liWGS_SV}/scripts/module5.sh ${samples_list} ${params}"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module5.log -e ${OUTDIR}/logs/module5.log \
+  -J ${COHORT_ID}_MODULE_5 "${liWGS_SV}/scripts/module5.sh ${samples_list} ${params}"
 
   #Gate until modules 4 & 5 complete; 20 sec check; 5 min report
   GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_4\|${COHORT_ID}_MODULE_5" | wc -l )
@@ -139,9 +147,11 @@ if [ ${part} == "B" ] || [ ${part} == "F" ]; then
   ##STAGE 3: modules 6 and 7
   echo -e "STATUS [$(date)]: Beginning PHASE 3..."
   #Submit module 6 (consensus CNV merging)
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module6.log -e ${OUTDIR}/logs/module6.log -u nobody -J ${COHORT_ID}_MODULE_6 "${liWGS_SV}/scripts/module6.sh ${samples_list} ${params}"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module6.log -e ${OUTDIR}/logs/module6.log \
+  -u nobody -J ${COHORT_ID}_MODULE_6 "${liWGS_SV}/scripts/module6.sh ${samples_list} ${params}"
   #Submit module 7 (complex SV categorization)
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module7.log -e ${OUTDIR}/logs/module7.log -u nobody -J ${COHORT_ID}_MODULE_7 "${liWGS_SV}/scripts/module7.sh ${samples_list} ${params}"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module7.log -e ${OUTDIR}/logs/module7.log \
+  -u nobody -J ${COHORT_ID}_MODULE_7 "${liWGS_SV}/scripts/module7.sh ${samples_list} ${params}"
 
   #Gate until modules 6 & 7 completes; 20 sec check; 5 min report
   GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_6\|${COHORT_ID}_MODULE_7" | wc -l )
@@ -162,7 +172,8 @@ if [ ${part} == "B" ] || [ ${part} == "F" ]; then
 
   ##STAGE 5: module 9
   echo -e "STATUS [$(date)]: Beginning PHASE 5..."
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module9.log -e ${OUTDIR}/logs/module9.log -u nobody -J ${COHORT_ID}_MODULE_9 "${liWGS_SV}/scripts/module9.sh ${samples_list} ${params}"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/module9.log -e ${OUTDIR}/logs/module9.log \
+  -u nobody -J ${COHORT_ID}_MODULE_9 "${liWGS_SV}/scripts/module9.sh ${samples_list} ${params}"
 
   #Gate until module 9 completes; 20 sec check; 5 min report
   GATEcount=$( bjobs -w | awk '{ print $7 }' | grep -e "${COHORT_ID}_MODULE_9" | wc -l )
@@ -186,7 +197,8 @@ if [ ${part} == "B" ] || [ ${part} == "F" ]; then
 
   #Summarize run outcomes
   echo -e "STATUS [$(date)]: Calculating run summary metrics..."
-  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/finalSummary.log -e ${OUTDIR}/logs/finalSummary.log -u nobody -J ${COHORT_ID}_SUMMARIZE "${liWGS_SV}/scripts/Holmes_summary.sh ${samples_list} ${params}"
+  bsub -q normal -sla miket_sc -o ${OUTDIR}/logs/finalSummary.log -e ${OUTDIR}/logs/finalSummary.log \
+  -u nobody -J ${COHORT_ID}_SUMMARIZE "${liWGS_SV}/scripts/Holmes_summary.sh ${samples_list} ${params}"
 
   #Remove working directory unless specified otherwise
   if ! [ ${KEEP_TMP}=="TRUE" ]; then

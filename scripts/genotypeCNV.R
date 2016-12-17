@@ -1,13 +1,15 @@
 #!/usr/bin/Rscript
 
-#---------------------------
-# Batch CNV Interval Genotyping
-# Talkowski Laboratory
-#
-# Harrison Brand, Ryan Collins, and Joseph Glessner
-# Update October 2015 (load sample set prior)
-# Update August 2015 (for incorporation into Holmes liWGS-SV 1.0)
-#---------------------------
+#################################
+#             HOLMES            #
+#  The liWGS SV discovery tool  #
+#################################
+
+# Copyright (c) 2016 Ryan L. Collins and the laboratory of Michael E. Talkowski
+# Contact: Ryan L. Collins <rlcollins@g.harvard.edu>
+# Code development credits and citation availble on GitHub
+
+#Physical depth genotyping script
 
 ##POSITIONAL ARGUMENTS##
 # [1] Bed file of CNVs to check. No header. ID as fourth column. SampleIDs of interest comma delimited as fifth column.
@@ -53,7 +55,6 @@ suppressMessages(library(reshape))
 if("perm" %in% rownames(installed.packages()) == FALSE)
 {install.packages("perm",repos="http://cran.rstudio.com")}
 suppressMessages(library(perm))
-
 
 ##Loads regions to plot
 intervals <- read.table(args[1],sep="\t",header=F)[,c(1:5)]

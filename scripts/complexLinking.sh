@@ -1,8 +1,15 @@
 #!/bin/bash
 
-#liWGS-SV Pipeline: Complex Linking Script
-#August 2015
-#Contact: hbrand@mgh.harvard.edu or rcollins@chgr.mgh.harvard.edu
+#################################
+#             HOLMES            #
+#  The liWGS SV discovery tool  #
+#################################
+
+# Copyright (c) 2016 Ryan L. Collins and the laboratory of Michael E. Talkowski
+# Contact: Ryan L. Collins <rlcollins@g.harvard.edu>
+# Code development credits and citation availble on GitHub
+
+#Complex linking script
 
 #Read input
 samples_list=$1
