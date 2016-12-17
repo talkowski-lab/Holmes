@@ -1,0 +1,11 @@
+example.delly.p1.vcf	SFARI_d11194p1	delly
+example.lumpy.p1.vcf.gz	SFARI_d11194p1	lumpy
+example.rpc.p1.bedpe	SFARI_d11194p1	rpc
+example.delly.s1.vcf	SFARI_d11194s1	delly
+example.lumpy.s1.vcf.gz	SFARI_d11194s1	lumpy
+example.rpc.s1.bedpe	SFARI_d11194s1	rpc
+example.delly.fa.vcf	SFARI_d11194fa	delly
+example.lumpy.fa.vcf.gz	SFARI_d11194fa	lumpy
+example.rpc.fa.bedpe	SFARI_d11194fa	rpc
+example.delly.mo.vcf	SFARI_d11194mo	delly
+example.lumpy.mo.vcf.gz	SFARI_d11194mo	lumpy
