@@ -37,7 +37,8 @@ The pipeline is run in nine independent modules split into five sequential stage
 
 #### Execution command:  
 Holmes is invoked by the top-level master script, `runHolmes.sh`:  
-```runHolmes.sh samples.list parameters_info.sh
+```
+runHolmes.sh samples.list parameters_info.sh
 ```  
 
 #### Input:  
