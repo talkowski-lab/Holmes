@@ -29,7 +29,7 @@ Code development credits: Ryan L. Collins, Harrison Brand, Matthew R. Stone, Vam
 Holmes is a pipeline for SV discovery and annotation in cohorts (n>20-30) of human liWGS libraries. This tool can detect, resolve, and classify all known forms of SV, from canonical copy number variants (CNVs) to balanced rearrangements (e.g. inversions, reciprocal translocations) to more complex chromosomal rearrangements. Currently, this tool only supports human samples and the GRCh37 reference assembly.  
 
 The pipeline is run in nine independent modules split into five sequential stages, as shown below:  
-![Holmes Schematic](https://github.com/RCollins13/Holmes/blob/master/data/Holmes_Schematic.tiff "Holmes Schematic")  
+![Holmes Schematic](https://github.com/RCollins13/Holmes/blob/master/data/Holmes_Schematic.png "Holmes Schematic")  
 
 **Note: the codebase for this tool has hard-coded variable paths and other dependencies particular to the Partners Healthcare computing cluster. These dependencies are in the process of being resolved so the tool can be more easily deployed on other clusters. For now, please contact <rlcollins@g.harvard.edu> with any questions or issues.**  
 
