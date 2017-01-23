@@ -33,19 +33,24 @@ The pipeline is run in nine independent modules split into five sequential stage
 
 **Note: the codebase for this tool has hard-coded variable paths and other dependencies particular to the Partners Healthcare computing cluster. These dependencies are in the process of being resolved so the tool can be more easily deployed on other clusters. For now, please contact <rlcollins@g.harvard.edu> with any questions or issues.**  
 
-Preliminary description:  
+## Running Holmes  
 
-Execution command:  
-runHolmes.sh samples.list parameters_info.sh  
+#### Execution command:  
+Holmes is invoked by the top-level master script, `runHolmes.sh`:  
+```runHolmes.sh samples.list parameters_info.sh
+```  
 
-##INPUT##
-samples.list: three columns, tab delimited, col 1) sample ID, col 2) full path to sample bam, col 3) expected sex (M=XY, F=XX, O=other, U=unknown (will defer to predicted sex by sexcheck))  
-parameters_info.sh: shell script to export all parameters for pipeline run  
+#### Input:  
+samples.list: three columns, tab delimited  
+col 1) sample ID  
+col 2) full path to sample bam  
+col 3) expected sex (M=XY, F=XX, O=other, U=unknown (will defer to predicted sex by sexcheck))  
+`parameters_info.sh`: shell script to export all parameters for pipeline run  
 
-##PRE-MODULE STEPS##
-Symlinks & indexes all bams  
-Creates working and output directory trees  
-Loads necessary modules  
+#### Pre-module 1 preparation steps
+- Symlinks & indexes all bams  
+- Creates working and output directory trees  
+- Loads necessary modules  
 
 ##MODULE 1: QC##
 Runs the following:  
