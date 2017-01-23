@@ -6,7 +6,7 @@ Copyright (c) 2016 Ryan L. Collins and the laboratory of Michael E. Talkowski
 Massachusetts General Hospital, The Broad Institute, and Harvard Medical School  
 Contact: Ryan L. Collins <rlcollins@g.harvard.edu>  
 
-If you use this software, please cite: 
+If you use this software, please cite:  
 Collins RL, et al. *Defining the spectrum of large inversions, complex structural variation, and chromothripsis in the morbid genome.* In Press (2016)  
 
 Code development credits: Ryan L. Collins, Harrison Brand, Matthew R. Stone, Vamsee Pillalamarri, Joseph T. Glessner, Claire Redin, Colby Chiang, Ian Blumenthal, Adrian Heilbut  
