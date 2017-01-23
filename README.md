@@ -89,6 +89,8 @@ Writes master QC table to `${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics`
 #### Consensus CNV Categorization  
 - Runs in one of two modes: with or without genotyping information  
 - Mode chosen by parameter `${min_geno}`, set in `module6.sh`, which corresponds to the minimum number of samples in the cohort to use genotyping  
+
+
 **Consensus Groups with Genotyping:**  
 - A [HIGH]: Valid cluster, cnMOPS or genotyping support, <30% blacklist  
 - B [HIGH]: cnMOPS call, ≥50kb, <30% blacklist, genotyping pass, no clustering overlap  
@@ -105,20 +107,23 @@ Writes master QC table to `${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics`
 - D [LOW]: cnMOPS call, ≥50kb, ≥30% blacklist  
 - E [LOW]: valid cluster, <25kb, no cnMOPS support  
 
-Returns single merged file each for consensus dels and consensus dups  
+Returns single merged file each for consensus dels and consensus dups.  
 
-##MODULE 7: COMPLEX SV CATEGORIZATION##
-Runs inversion classification script  
-Runs translocation classification script  
-Runs complex linking script  
-Runs complex parsing script  
+#### Module 7: Balanced & Complex SV Resolution  
+- Runs inversion classification script  
+- Runs translocation classification script  
+- Runs complex linking script  
+- Runs complex parsing script  
 
-##MODULE 8: VARIANT CONSOLIDATION & REFORMATTING
+#### Module 8: Call Consolidation & Reformatting  
 Outputs the following seven variant files:  
--Deletion  
--Duplication  
--Inversion  
--Insertion  
--Translocation  
--Complex  
--Unresolved  
+- Deletion  
+- Duplication  
+- Inversion  
+- Insertion  
+- Translocation  
+- Complex  
+- Unresolved  
+
+#### Module 9: SV Annotation  
+- Annotates SVs for genic disruption and overlap with ENCODE enhancers, promoters, and TADs  
