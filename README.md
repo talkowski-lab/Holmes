@@ -53,28 +53,27 @@ col 3) expected sex (M=XY, F=XX, O=other, U=unknown (will defer to predicted sex
 - Creates working and output directory trees  
 - Loads necessary modules  
 
-##MODULE 1: QC##
+#### Module 1: QC  
 Runs the following:  
-	Picard EstimateLibraryComplexity  
-	Picard CollectAlignmentSummaryMetrics  
-	Picard CollectInsertSizeMetrics  
-	Picard CollectWgsMetrics  
-	Samtools flagstat  
-	Bamtools stats  
-	Sex Check  
-	WGS Dosage Bias Check  
-Checks for nominal QC values, reports errors to ${OUTDIR}/${COHORT_ID}_WARNINGS.txt  
-Writes master QC table to ${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics  
+- Picard EstimateLibraryComplexity  
+- Picard CollectAlignmentSummaryMetrics  
+- Picard CollectInsertSizeMetrics  
+- Picard CollectWgsMetrics  
+- Samtools flagstat  
+- Bamtools stats  
+- Sex Check  
+- WGS Dosage Bias Check  
+Checks for nominal QC values, reports errors to `${OUTDIR}/${COHORT_ID}_WARNINGS.txt`  
+Writes master QC table to `${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics`  
 
-##MODULE 2: PHYSICAL DEPTH ANALYSES##
-Runs binCov to generate 1kb binned physical depth for each library  
-BGZips & tabix indexes each coverage file (for classifier)  
+#### Module 2: Physical Depth Analysis  
+- Runs binCov to generate 1kb binned physical depth for each library  
+- BGZips & tabix indexes each coverage file (for classifier)  
 
-##MODULE 3: PER-SAMPLE CLUSTERING##
-**Rate-limiting step of entire pipeline**
-If ${pre_bamstat} isn't set as "TRUE", bamstat is run at min cluster size = 3 for each sample  
-If ${pre_bamstat}="TRUE", bamstat clusters and stats.file are copied from preexisting paths to ${WRKDIR}  
-Removes *pairs.txt and *pairs.sorted.txt to save space  
+#### Module 3: Per-Sample Read Pair Clustering  
+- If `${pre_bamstat}` isn't set as `TRUE`, bamstat is run at `min cluster size = 3` for each sample  
+- If `${pre_bamstat}="TRUE"`, bamstat clusters and `stats.file` are copied from preexisting paths to `${WRKDIR}`  
+- Removes `*pairs.txt` and `*pairs.sorted.txt` to save space  
 
 ##MODULE 4: PHYSICAL DEPTH CNV CALLING##
 Runs cnMOPS on autosomes on all samples  
