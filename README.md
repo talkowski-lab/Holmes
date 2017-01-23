@@ -3,14 +3,35 @@
 Pipeline for structural variation detection from liWGS libraries  
 
 Copyright (c) 2016 Ryan L. Collins and the laboratory of Michael E. Talkowski  
+Massachusetts General Hospital, The Broad Institute, and Harvard Medical School
 Contact: Ryan L. Collins <rlcollins@g.harvard.edu>  
 
 If you use this software, please cite:
-Collins RL, et al. Defining the spectrum of large inversions, complex structural variation, and chromothripsis in the morbid genome. In Press (2016)  
+Collins RL, et al. *Defining the spectrum of large inversions, complex structural variation, and chromothripsis in the morbid genome.* In Press (2016)  
 
 Code development credits: Ryan L. Collins, Harrison Brand, Matthew R. Stone, Vamsee Pillalamarri, Joseph T. Glessner, Claire Redin, Colby Chiang, Ian Blumenthal, Adrian Heilbut
 
-Readme to be cleaned up very soon!  
+### Table of Contents  
+1. Overview  
+2. Modules
+  Module 1: Cohort QC
+  Module 2: Physical Depth Analysis  
+  Module 3: Per-Sample Read Pair Clustering  
+  Module 4: Physical Depth-Based CNV Discovery  
+  Module 5: Cohort-Wide Joint Read Pair Clustering & Classification
+  Module 6: Consensus CNV Categorization  
+  Module 7: Balanced & Complex SV Resolution  
+  Module 8: Call Consolidation & Reformatting  
+  Module 9: SV Annotation
+3. Miscellanea & FAQs  
+
+## Overview  
+Holmes is a pipeline for SV discovery and annotation in cohorts (n>20-30) of human liWGS libraries. This tool can detect, resolve, and classify all known forms of SV, from canonical copy number variants (CNVs) to balanced rearrangements (e.g. inversions, reciprocal translocations) to more complex chromosomal rearrangements. Currently, this tool only supports human samples and the GRCh37 reference assembly.  
+
+The pipeline is run in nine independent modules split into five sequential stages, as shown below:  
+
+
+**Note: the codebase for this tool has hard-coded variable paths and other dependencies particular to the Partners Healthcare computing cluster. These dependencies are in the process of being resolved so the tool can be more easily deployed on other clusters. For now, please contact <rlcollins@g.harvard.edu> with any questions or issues.**  
 
 Preliminary description:  
 
