@@ -90,6 +90,7 @@ Writes master QC table to `${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics`
 - Runs in one of two modes: with or without genotyping information  
 - Mode chosen by parameter `${min_geno}`, set in `module6.sh`, which corresponds to the minimum number of samples in the cohort to use genotyping  
 
+![Consensus CNV Categorization](https://github.com/RCollins13/Holmes/blob/master/data/Module6_Schematic.png "Consensus CNV Categorization")  
 
 **Consensus Groups with Genotyping:**  
 - A [HIGH]: Valid cluster, cnMOPS or genotyping support, <30% blacklist  
@@ -99,7 +100,9 @@ Writes master QC table to `${OUTDIR}/QC/cohort/${COHORT_ID}.QC.metrics`
 - E [MED]: cnMOPS call, ≥50kb, genotyping pass, ≥30% blacklist  
 - F [LOW]: cnMOPS call, ≥50kb, no clustering support, no genotyping support  
 - G [LOW]: cnMOPS call, <50kb, genotyping pass, ≥30% blacklist  
-- H [LOW]: valid cluster, <25kb, no cnMOPS or genotyping support  
+- H [LOW]: valid cluster, <25kb, no cnMOPS or genotyping support    
+
+
 **Consensus Groups without Genotyping:**  
 - A [HIGH]: Valid cluster, cnMOPS support, <30% blacklist  
 - B [MED]: cnMOPS call, ≥50kb, <30% blacklist, no clustering overlap  
