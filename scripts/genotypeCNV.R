@@ -87,7 +87,7 @@ rebin <- function(df,compression){
   return(as.data.frame(cbind(Chr,Start,End,newvals)))
 }
 
-timeLimit=60              #Time limit for loci since some run long
+timeLimit=300              #Time limit for loci since some run long
 
 #Main genotyping function
 genotypeCov <- function(chr,start,end,            #region to be genotyped
